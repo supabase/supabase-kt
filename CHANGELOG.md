@@ -1,5 +1,52 @@
 # Changelog
 
+### 3.9.0 - October 27, 2026
+
+### Chore
+
+* Update CODEOWNERS by @safaorhan in https://github.com/supabase/supabase-kt/pull/1435
+* Update CONTRIBUTING.md with information on how to run tests by @cmelchior in https://github.com/supabase/supabase-kt/pull/1392
+* Add more articles and sample by @hieuwu in https://github.com/supabase/supabase-kt/pull/1401
+* docs: how to read the library logs on iOS by @veropduro in https://github.com/supabase/supabase-kt/pull/1408
+* docs: Add migration to official notice to README.md. by @safaorhan in https://github.com/supabase/supabase-kt/pull/1431
+
+### Auth
+
+* **Add lifecycle callbacks for iOS and tvOS** by @olipetrovic in https://github.com/supabase/supabase-kt/pull/1390
+  Uses the same config property as the Android implementation.
+* fix(auth): [Security] Avoid writing session credentials to the platform log & mask sensitive values by @hieuwu in https://github.com/supabase/supabase-kt/pull/1391
+* Handle OAuth query errors in the implicit flow on Android, Apple and web by @AtharvaLakhe in https://github.com/supabase/supabase-kt/pull/1426
+* docs: notes for writing a custom SessionManager by @veropduro in https://github.com/supabase/supabase-kt/pull/1409
+* Add Storage integration tests, fix vector and analytics bucket response deserialization  by @hieuwu in https://github.com/supabase/supabase-kt/pull/1410
+* fix(auth): decode URL fragment parameters and recognize errors without error_code by @AndroidPoet in https://github.com/supabase/supabase-kt/pull/1424
+
+### Storage
+
+* feat(storage): **add new storage exception and expose `code` parameter** by @jan-tennert in https://github.com/supabase/supabase-kt/pull/1376
+  All Storage methods no longer throw a generic exception, but a StorageRestException
+* fix(storage): keep the file size a Long when sizing an upload chunk by @AndroidPoet in https://github.com/supabase/supabase-kt/pull/1404
+* fix(storage): fix reading resumable uploads back from the cache by @AndroidPoet in https://github.com/supabase/supabase-kt/pull/1405
+* fix(storage): keep the error and message when an error body has no code by @AndroidPoet in https://github.com/supabase/supabase-kt/pull/1407
+* fix(storage): download variant with channel doesn't throw rest exceptions by @jan-tennert in https://github.com/supabase/supabase-kt/pull/1419
+* fix(storage): return the unencoded path in FileUploadResponse by @RaphaelFakhri in https://github.com/supabase/supabase-kt/pull/1428
+
+### Postgrest
+
+* docs(postgrest): document the empty list behaviour of likeAll, likeAny, ilikeAll and ilikeAny by @AndroidPoet in https://github.com/supabase/supabase-kt/pull/1432
+* fix(postgrest): escape reserved characters in array filter values by @AndroidPoet in https://github.com/supabase/supabase-kt/pull/1403
+* fix(postgrest): allow multiple filters on one column by @jan-tennert in https://github.com/supabase/supabase-kt/pull/1420
+
+### Realtime (reliability)
+
+* fix(realtime): handle channel errors and rejoins like realtime-js by @sproctor in https://github.com/supabase/supabase-kt/pull/1433
+* fix(realtime): include join_ref on leave and access_token messages by @grdsdev in https://github.com/supabase/supabase-kt/pull/1402
+* fix(realtime): prevent heartbeat tick from racing disconnect() by @alperen-kaplan in https://github.com/supabase/supabase-kt/pull/1395
+* fix(realtime): reset the heartbeat ref when a new socket connects by @devjn in https://github.com/supabase/supabase-kt/pull/1423
+* fix(realtime): Fix race condition when scheduling multiple disconnects by @jan-tennert in https://github.com/supabase/supabase-kt/pull/1418
+* fix(realtime): Fix race condition when rejoining channels before auth is ready by @jan-tennert in https://github.com/supabase/supabase-kt/pull/1417
+* fix(realtime): Fix race condition when resubscribing channel by @jan-tennert in https://github.com/supabase/supabase-kt/pull/1415
+* fix(realtime): don't take channel messages for heartbeat replies by @sproctor in https://github.com/supabase/supabase-kt/pull/1434
+
 ### 3.8.0 - August 26, 2026
 
 ### Core
