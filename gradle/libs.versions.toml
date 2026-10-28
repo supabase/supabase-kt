@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.4.0"
 accompanist-permissions = "0.37.3"
-ktor = "3.5.1"
+ktor = "3.6.0"
 dokka = "2.2.0"
 kotlinx-datetime = "0.8.0"
 kermit = "2.1.0"
