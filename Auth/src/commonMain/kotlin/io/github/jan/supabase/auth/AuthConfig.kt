@@ -7,6 +7,7 @@ import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.annotations.SupabaseInternal
 import io.github.jan.supabase.auth.jwt.JwkCache
 import io.github.jan.supabase.auth.jwt.SharedJwkCache
+import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.auth.user.UserSession
 import io.github.jan.supabase.plugins.CustomSerializationConfig
 import io.github.jan.supabase.plugins.MainConfig
@@ -105,6 +106,19 @@ open class AuthConfigDefaults : MainConfig(), AuthDependentPluginConfig, CustomS
      * Currently only supported on Android, iOS and tvOS.
      */
     var enableLifecycleCallbacks: Boolean = true
+
+    /**
+     * Whether to reset [Auth.sessionStatus] to [SessionStatus.Initializing] when the app moves to
+     * the background.
+     *
+     * When `true` (default), the status is reset on background and re-established on resume, which
+     * means consumers observe a transient [SessionStatus.Initializing] after every resume. When
+     * `false`, the last known status (e.g. [SessionStatus.Authenticated]) is kept while auto-refresh
+     * is paused, avoiding that transient state.
+     *
+     * Only has an effect when [enableLifecycleCallbacks] is `true`. Currently only supported on Android.
+     */
+    var resetStatusOnBackground: Boolean = true
 
     /**
      * The URL launcher used to open OAuth links in the system browser.
