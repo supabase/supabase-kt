@@ -1,6 +1,6 @@
 # Changelog
 
-### 3.9.0 - October 27, 2026
+### 3.9.0 - October 29, 2026
 
 ### Chore
 
@@ -10,6 +10,7 @@
 * docs: how to read the library logs on iOS by @veropduro in https://github.com/supabase/supabase-kt/pull/1408
 * docs: Add migration to official notice to README.md. by @safaorhan in https://github.com/supabase/supabase-kt/pull/1431
 * docs: document SDK compatibility with Supabase services by @cmelchior in https://github.com/supabase/supabase-kt/pull/1444
+* chore(deps): upgrade dependencies, AGP and Gradle by @jan-tennert in https://github.com/supabase/supabase-kt/pull/1430
 
 ### Auth
 
