@@ -52,7 +52,10 @@ kotlin {
                 api(compose.foundation)
                 api(compose.material3)
                 api(compose.materialIconsExtended)
-                addModules(SupabaseModule.AUTH, SupabaseModule.POSTGREST, SupabaseModule.REALTIME)
+                addModules(SupabaseModule.AUTH, SupabaseModule.POSTGREST, SupabaseModule.REALTIME, SupabaseModule.FUNCTIONS)
+                api("io.github.jan-tennert.supabase:compose-auth:$pluginVersion")
+                api("io.github.jan-tennert.supabase:compose-auth-ui:$pluginVersion")
+
                 api(libs.compose.auth)
                 api(libs.compose.auth.ui)
                 api(libs.koin.core)

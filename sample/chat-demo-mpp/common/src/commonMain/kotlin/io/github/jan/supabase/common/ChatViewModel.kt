@@ -7,6 +7,7 @@ import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.common.net.AuthApi
 import io.github.jan.supabase.common.net.Message
 import io.github.jan.supabase.common.net.MessageApi
+import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +16,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 expect open class MPViewModel() {
 
@@ -99,6 +102,20 @@ class ChatViewModel(
 
     fun handleSignInWithGoogleResult() {
         alert.value = "Successfully signed in with Google!"
+    }
+
+    fun verifyEmail(token: String) {
+        coroutineScope.launch {
+            runCatching {
+                supabaseClient.functions.invoke("email-verification", body = buildJsonObject {
+                    put("token", token)
+                })
+            }.onSuccess {
+                alert.value = "Verify email successfully"
+            }.onFailure {
+                alert.value = "Verify email failed"
+            }
+        }
     }
 
     fun logout() {

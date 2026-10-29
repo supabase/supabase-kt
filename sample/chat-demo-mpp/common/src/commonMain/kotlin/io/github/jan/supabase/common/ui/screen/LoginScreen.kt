@@ -39,6 +39,7 @@ import io.github.jan.supabase.common.ui.components.OTPDialogState
 import io.github.jan.supabase.common.ui.components.PasswordField
 import io.github.jan.supabase.common.ui.components.PasswordRecoveryDialog
 import io.github.jan.supabase.compose.auth.composable.NativeSignInResult
+import io.github.jan.supabase.compose.auth.composable.rememberEmailVerifier
 import io.github.jan.supabase.compose.auth.composable.rememberSignInWithGoogle
 import io.github.jan.supabase.compose.auth.composeAuth
 import io.github.jan.supabase.compose.auth.ui.ProviderButtonContent
@@ -53,6 +54,19 @@ fun LoginScreen(viewModel: ChatViewModel) {
     var email by remember { mutableStateOf("") }
     var otpDialogState by remember { mutableStateOf<OTPDialogState>(OTPDialogState.Invisible) }
     var showPasswordRecoveryDialog by remember { mutableStateOf(false) }
+    val emailVerifier = viewModel.supabaseClient.composeAuth.rememberEmailVerifier(
+        onResult = { result ->
+            result.fold(
+                onSuccess = { userInfo ->
+                    viewModel.verifyEmail(userInfo.token)
+                    Logger.d("LoginScreen - Verified SD-JWT: ${userInfo.token}")
+                },
+                onFailure = { error ->
+                    Logger.d("LoginScreen - Verification failed")
+                }
+            )
+        }
+    )
     val action = viewModel.supabaseClient.composeAuth.rememberSignInWithGoogle(
         onResult = { result ->
             when (result) {
@@ -114,6 +128,16 @@ fun LoginScreen(viewModel: ChatViewModel) {
             enabled = email.isNotBlank() && password.isNotBlank()
         ) {
             Text(if (signUp) "Register" else "Login")
+        }
+
+        if (signUp) {
+            Button(
+                onClick = { emailVerifier.verify(nonce = "nonce-value") },
+                modifier = Modifier.padding(top = 10.dp),
+                enabled = email.isNotBlank()
+            ) {
+                Text("Verify email")
+            }
         }
 
         OutlinedButton(
