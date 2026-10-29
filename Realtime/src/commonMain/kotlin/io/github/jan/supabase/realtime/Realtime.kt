@@ -141,6 +141,7 @@ interface Realtime : MainPlugin<Realtime.Config>, CustomSerializationPlugin {
      * @property websocketFactory A custom websocket factory. If this is set, the [websocketConfig] will be ignored
      * @property rejoinDelay The interval between channel rejoin attempts
      * @property maxAttempts The maximum number of times a channel will try to rejoin after an error before giving up. Defaults to 5
+     * @property timeout How long a channel waits for the server to answer its join before trying again. A channel that waits for its postgres changes subscription ([PostgresChangesOptions.wait]) waits at least 10 seconds longer than the server does. Defaults to 10 seconds
      * @property disconnectOnEmptyChannelsAfter Delay before disconnecting from the realtime socket after the last channel was removed. If null, it defaults to `2*heartbeatInterval`
      * @property vsn The realtime protocol version. [RealtimeProtocolVersion.V2] supports binary payloads and is more efficient.
      */
@@ -154,6 +155,7 @@ interface Realtime : MainPlugin<Realtime.Config>, CustomSerializationPlugin {
         var rejoinDelay: Duration = 2.seconds
         var disconnectOnEmptyChannelsAfter: Duration? = null
         var maxAttempts: Int = 5
+        var timeout: Duration = 10.seconds
         var disconnectOnSessionLoss: Boolean = true
         var connectOnSubscribe: Boolean = true
         @SupabaseInternal var websocketFactory: RealtimeWebsocketFactory? = null

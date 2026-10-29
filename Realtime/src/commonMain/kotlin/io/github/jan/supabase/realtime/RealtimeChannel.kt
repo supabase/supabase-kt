@@ -44,7 +44,10 @@ interface RealtimeChannel {
 
     /**
      * Subscribes to the channel
-     * @param blockUntilSubscribed if true, the method will block the coroutine until the [status] is [Status.SUBSCRIBED]
+     * @param blockUntilSubscribed if true, the method will block the coroutine until the [status] is [Status.SUBSCRIBED].
+     * It keeps waiting while the connection is lost, since the channel rejoins when the client reconnects.
+     * @throws RealtimeChannelJoinException if [blockUntilSubscribed] is true and the channel stops trying to join before it's
+     * subscribed: it gave up after [Realtime.Config.maxAttempts] or was closed
      */
     suspend fun subscribe(blockUntilSubscribed: Boolean = false)
 
@@ -143,6 +146,16 @@ interface RealtimeChannel {
      * subscription. 
      */
     fun systemFlow(): Flow<RealtimeSystemPayload>
+
+    /**
+     * Listen for errors on this channel: a rejected join, a channel error, or a join the server didn't answer within
+     * [Realtime.Config.timeout]. Like realtime-js's `CHANNEL_ERROR` and `TIMED_OUT`. The channel rejoins after each one,
+     * until [Realtime.Config.maxAttempts] is reached.
+     *
+     * A refused postgres changes subscription arrives here as a rejected join when the channel waits for it
+     * ([PostgresChangesOptions.wait]), and on [systemFlow] otherwise.
+     */
+    fun errorFlow(): Flow<RealtimeChannelError>
 
     @SupabaseInternal
     fun RealtimeChannel.addPostgresChange(data: PostgresJoinConfig)

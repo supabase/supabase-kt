@@ -5,7 +5,14 @@ package io.github.jan.supabase.realtime
 import io.github.jan.supabase.annotations.SupabaseInternal
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 @SupabaseInternal
 @Serializable
@@ -21,7 +28,9 @@ data class RealtimeJoinConfig(
     @SerialName("postgres_changes")
     val postgresChanges: List<PostgresJoinConfig>,
     @SerialName("private")
-    var isPrivate: Boolean
+    var isPrivate: Boolean,
+    @SerialName("postgres_changes_options")
+    val postgresChangesOptions: PostgresChangesOptions? = null
 )
 
 /**
@@ -38,6 +47,25 @@ data class BroadcastJoinConfig(
     @SerialName("ack") var acknowledgeBroadcasts: Boolean,
     @SerialName("self") var receiveOwnBroadcasts: Boolean,
     @SerialName("replication_ready") var replicationReady: Boolean
+)
+
+/**
+ * By default a channel is [RealtimeChannel.Status.SUBSCRIBED] as soon as it has joined, which can be before the server has
+ * set up its postgres changes subscription, or refused it (see [RealtimeChannel.systemFlow]).
+ *
+ * @param wait Whether the server holds the join until the postgres changes subscription is set up, so that
+ * [RealtimeChannel.Status.SUBSCRIBED] means changes are being received. If it can't be set up, the server rejects the join
+ * (e.g. `RealtimeDisabledForConfiguration` for a table that isn't enabled for Realtime), the reason reaches
+ * [RealtimeChannel.errorFlow], and the channel retries it like any other channel error. The channel's join timeout is
+ * extended to outlast the server's wait (see [Realtime.Config.timeout]). Has no effect on a channel without postgres
+ * changes. Realtime servers without support for it ignore it.
+ * @param timeout How long the server holds the join. Null uses the server's default (15 s); the server caps it at its own maximum.
+ */
+@Serializable
+data class PostgresChangesOptions(
+    var wait: Boolean = false,
+    @Serializable(with = MillisecondsSerializer::class)
+    var timeout: Duration? = null
 )
 
 /**
@@ -68,4 +96,10 @@ data class PostgresJoinConfig(val schema: String, val table: String? = null, val
         return result
     }
 
+}
+
+private object MillisecondsSerializer : KSerializer<Duration> {
+    override val descriptor = PrimitiveSerialDescriptor("MillisecondsDuration", PrimitiveKind.LONG)
+    override fun serialize(encoder: Encoder, value: Duration) = encoder.encodeLong(value.inWholeMilliseconds)
+    override fun deserialize(decoder: Decoder): Duration = decoder.decodeLong().milliseconds
 }
