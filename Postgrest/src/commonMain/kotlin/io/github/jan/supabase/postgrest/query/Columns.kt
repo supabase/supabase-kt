@@ -1,5 +1,6 @@
 package io.github.jan.supabase.postgrest.query
 
+import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.postgrest.classPropertyNames
 import kotlin.jvm.JvmInline
 
@@ -16,6 +17,15 @@ value class Columns @PublishedApi internal constructor(val value: String) {
          * Select all columns
          */
         val ALL = Columns("*")
+
+        /**
+         * Select all columns given in the [builder] parameter
+         * @param builder The columns to select
+         */
+        @SupabaseExperimental
+        inline operator fun invoke(builder: BasicColumnsBuilder.() -> Unit): Columns {
+            return Columns(BasicColumnsBuilder().apply(builder).build())
+        }
 
         /**
          * Select all columns given in the [value] parameter
@@ -40,21 +50,6 @@ value class Columns @PublishedApi internal constructor(val value: String) {
          * @param T The type of the columns to select
          */
         inline fun <reified T> type() = list(classPropertyNames<T>())
-
-        private fun String.clean(): String {
-            var quoted = false
-            val regex = Regex("\\s")
-            return this.map {
-                if (it == '"') {
-                    quoted = !quoted
-                }
-                if (regex.matches(it.toString()) && !quoted) {
-                    ""
-                } else {
-                    it
-                }
-            }.joinToString("")
-        }
 
     }
 
