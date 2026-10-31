@@ -162,6 +162,7 @@ internal class ResumableUploadImpl(
             header("Tus-Resumable", TUS_VERSION)
             header("Content-Type", "application/offset+octet-stream")
             header("Upload-Offset", offset)
+            header("x-upsert", cacheEntry.upsert)
             bearerAuth(accessTokenOrApiKey())
             setBody(StreamContent(limit) {
                 writeFully(buffer, 0, limit.toInt())

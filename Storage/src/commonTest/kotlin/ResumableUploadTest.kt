@@ -1,4 +1,5 @@
 import io.github.jan.supabase.storage.Storage
+import io.github.jan.supabase.storage.UploadStatus
 import io.github.jan.supabase.storage.resumable.MemoryResumableCache
 import io.github.jan.supabase.storage.storage
 import io.github.jan.supabase.testing.createMockedSupabaseClient
@@ -11,6 +12,7 @@ import io.ktor.http.headersOf
 import io.ktor.utils.io.ByteReadChannel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -67,6 +69,54 @@ class ResumableUploadTest {
             }
             upload.pause()
             assertEquals(chunkSize, length)
+        }
+    }
+
+    @Test
+    fun testEveryChunkIsSentWithTheUpsertOption() {
+        runTest {
+            val chunkSize = 1024L
+            val size = chunkSize * 2
+            val upsertHeaders = mutableListOf<String?>()
+            val client = createMockedSupabaseClient(
+                configuration = {
+                    install(Storage) {
+                        resumable {
+                            cache = MemoryResumableCache()
+                            defaultChunkSize = chunkSize
+                        }
+                    }
+                }
+            ) { request ->
+                when (request.method) {
+                    HttpMethod.Post -> respond(
+                        "",
+                        HttpStatusCode.Created,
+                        headersOf(HttpHeaders.Location, "https://projectref.supabase.co/upload")
+                    )
+                    HttpMethod.Patch -> {
+                        upsertHeaders += request.headers["x-upsert"]
+                        respond(
+                            "",
+                            HttpStatusCode.NoContent,
+                            headersOf("Upload-Offset", (chunkSize * upsertHeaders.size).toString())
+                        )
+                    }
+                    else -> respondError(HttpStatusCode.BadRequest)
+                }
+            }
+            val upload = client.storage[bucketId].resumable.createOrContinueUpload(
+                data = ByteArray(size.toInt()),
+                source = "source",
+                path = "path"
+            ) {
+                upsert = true
+            }
+            upload.startOrResumeUploading()
+            withContext(Dispatchers.Default) {
+                withTimeout(10.seconds) { upload.stateFlow.first { it.status is UploadStatus.Success } }
+            }
+            assertEquals(listOf<String?>("true", "true"), upsertHeaders)
         }
     }
 
