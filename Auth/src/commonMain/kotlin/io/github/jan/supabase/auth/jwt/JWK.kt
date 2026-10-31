@@ -2,6 +2,7 @@
 package io.github.jan.supabase.auth.jwt
 
 import io.github.jan.supabase.auth.decodeValue
+import io.github.jan.supabase.auth.getValue
 import io.github.jan.supabase.auth.optional
 import io.github.jan.supabase.auth.withKey
 import kotlinx.serialization.SerialName

@@ -456,6 +456,7 @@ internal class AuthImpl(
             retrieveUser(token)
             return claims
         } else {
+            if(!signingKey.supports(claims.header.alg)) throw InvalidJwtException()
             val signedData = "$rawHeader.$rawPayload".encodeToByteArray()
             val verified = when(val alg = claims.header.alg) {
                 JwtHeader.Algorithm.RS256 -> {
@@ -478,6 +479,12 @@ internal class AuthImpl(
             if(!verified) throw InvalidJwtException()
             return claims
         }
+    }
+
+    private fun JWK.supports(alg: JwtHeader.Algorithm): Boolean = this.alg?.let { it == alg.name } ?: when(alg) {
+        JwtHeader.Algorithm.RS256 -> kty == JWK.KeyType.RSA
+        JwtHeader.Algorithm.ES256 -> kty == JWK.KeyType.EC && getParamOrNull<String>("crv") == "P-256"
+        JwtHeader.Algorithm.HS256 -> false
     }
 
     private suspend fun fetchJwk(kid: String, jwks: List<JWK>): JWK? {

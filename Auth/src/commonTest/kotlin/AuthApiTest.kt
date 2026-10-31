@@ -9,6 +9,7 @@ import io.github.jan.supabase.auth.OtpVerifyResult
 import io.github.jan.supabase.auth.PKCEConstants
 import io.github.jan.supabase.auth.SignOutScope
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.exception.InvalidJwtException
 import io.github.jan.supabase.auth.minimalConfig
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -36,6 +37,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -987,6 +989,53 @@ class AuthRequestTest {
                 // Expected - signature verification fails with dummy data
             }
             assertEquals(true, jwksFetched, "JWKS endpoint should be fetched for RS256 algorithm")
+        }
+    }
+
+    @Test
+    fun testGetClaimsRejectsHeaderAlgNotMatchingKeyAlg() {
+        runTest {
+            val jwt = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3Qta2V5LWlkIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.dGVzdC1zaWduYXR1cmU"
+            client = createMockedSupabaseClient(configuration = configuration) {
+                assertPathIs("/.well-known/jwks.json", it.url.pathAfterVersion())
+                respondJson(sampleJwksResponse())
+            }.awaitInit()
+            assertFailsWith<InvalidJwtException> {
+                client.auth.getClaims(jwt) {
+                    allowExpired = true
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testGetClaimsRejectsHeaderAlgNotMatchingKeyType() {
+        runTest {
+            val jwt = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InRlc3QtZWMta2V5LWlkIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.dGVzdC1zaWduYXR1cmU"
+            client = createMockedSupabaseClient(configuration = configuration) {
+                assertPathIs("/.well-known/jwks.json", it.url.pathAfterVersion())
+                respondJson(
+                    """
+                    {
+                        "keys": [
+                            {
+                                "kty": "EC",
+                                "kid": "test-ec-key-id",
+                                "crv": "P-256",
+                                "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+                                "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0",
+                                "key_ops": ["verify"]
+                            }
+                        ]
+                    }
+                    """.trimIndent()
+                )
+            }.awaitInit()
+            assertFailsWith<InvalidJwtException> {
+                client.auth.getClaims(jwt) {
+                    allowExpired = true
+                }
+            }
         }
     }
 
