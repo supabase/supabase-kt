@@ -232,7 +232,7 @@ class PostgrestTest {
                 assertMethodIs(HttpMethod.Post, it.method)
                 val receivedBody = it.body.toJsonElement()
                 assertEquals(expectedBody, receivedBody)
-                assertEquals("data", it.url.parameters["columns"])
+                assertEquals("\"data\"", it.url.parameters["columns"])
                 assertEquals("schema", it.headers["Content-Profile"])
                 respond("")
             }
@@ -254,8 +254,42 @@ class PostgrestTest {
                 assertMethodIs(HttpMethod.Post, it.method)
                 val receivedBody = it.body.toJsonElement()
                 assertEquals(expectedBody, receivedBody)
-                assertEquals("data", it.url.parameters["columns"])
+                assertEquals("\"data\"", it.url.parameters["columns"])
                 assertEquals("schema", it.headers["Content-Profile"])
+                respond("")
+            }
+        )
+    }
+
+    @Test
+    fun testInsertQuotesColumnNames() {
+        val body = JsonArray(listOf(buildJsonObject {
+            put("price (usd)", 1)
+            put("a.b", 2)
+        }))
+        testClient(
+            request = { table ->
+                from(table).insert(body)
+            },
+            requestHandler = {
+                assertEquals("\"price (usd)\",\"a.b\"", it.url.parameters["columns"])
+                respond("")
+            }
+        )
+    }
+
+    @Test
+    fun testUpsertQuotesColumnNames() {
+        val body = JsonArray(listOf(buildJsonObject {
+            put("price (usd)", 1)
+            put("a.b", 2)
+        }))
+        testClient(
+            request = { table ->
+                from(table).upsert(body)
+            },
+            requestHandler = {
+                assertEquals("\"price (usd)\",\"a.b\"", it.url.parameters["columns"])
                 respond("")
             }
         )
