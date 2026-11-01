@@ -71,7 +71,7 @@ interface ResumableClient {
 
 }
 
-internal class ResumableClientImpl(private val storageApi: BucketApi, private val cache: ResumableCache): ResumableClient {
+internal class ResumableClientImpl(private val storageApi: BucketApi, internal val cache: ResumableCache): ResumableClient {
 
     @OptIn(SupabaseInternal::class)
     private val httpClient = storageApi.supabaseClient.httpClient.httpClient
