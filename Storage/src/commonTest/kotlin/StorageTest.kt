@@ -7,6 +7,7 @@ import io.github.jan.supabase.storage.BucketSortColumn
 import io.github.jan.supabase.storage.SortOrder
 import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.resumable.MemoryResumableCache
+import io.github.jan.supabase.storage.resumable.ResumableClientImpl
 import io.github.jan.supabase.storage.storage
 import io.github.jan.supabase.testing.assertMethodIs
 import io.github.jan.supabase.testing.assertPathIs
@@ -26,6 +27,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.time.Clock
 
 class StorageTest {
@@ -298,6 +300,19 @@ class StorageTest {
             client.auth.awaitInitialization()
             client.auth.importAuthToken(key)
             client.storage.listBuckets()
+        }
+    }
+
+    @Test
+    fun testBucketsShareTheDefaultResumableCache() {
+        runTest {
+            client = createMockedSupabaseClient(configuration = { install(Storage) }) {
+                respond("")
+            }
+            val first = client.storage.from("first").resumable as ResumableClientImpl
+            val second = client.storage.from("second").resumable as ResumableClientImpl
+            assertSame(first.cache, second.cache)
+            assertSame(first.cache, (client.storage.from("first").resumable as ResumableClientImpl).cache)
         }
     }
 
