@@ -4,7 +4,6 @@ import io.github.jan.supabase.annotations.SupabaseInternal
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.logging.d
 import io.github.jan.supabase.logging.e
-import io.github.jan.supabase.logging.w
 import io.github.jan.supabase.storage.BucketApi
 import io.github.jan.supabase.storage.FileUploadResponse
 import io.github.jan.supabase.storage.Storage
@@ -136,12 +135,10 @@ internal class ResumableUploadImpl(
                     offset += uploaded
                 } catch(e: Exception) {
                     currentCoroutineContext().ensureActive()
-                    if(e !is IllegalStateException) {
-                        logger.e(e) {"Error while uploading chunk. Retrying in ${config.retryTimeout}" }
-                        delay(config.retryTimeout)
-                        updateOffset = true //if an error occurs, we need to update the server offset to avoid conflicts
-                        continue
-                    }
+                    logger.e(e) {"Error while uploading chunk. Retrying in ${config.retryTimeout}" }
+                    delay(config.retryTimeout)
+                    updateOffset = true //if an error occurs, we need to update the server offset to avoid conflicts
+                    continue
                 }
                 _stateFlow.value = ResumableUploadState(fingerprint, cacheEntry, UploadStatus.Progress(offset, size), paused.load())
             }
@@ -178,10 +175,7 @@ internal class ResumableUploadImpl(
                 logger.d { "Uploaded chunk" }
                 serverOffset = uploadResponse.headers["Upload-Offset"]?.toLong() ?: error("No upload offset found")
             }
-            HttpStatusCode.Conflict -> {
-                logger.w { "Upload conflict, skipping chunk" }
-                serverOffset = offset + limit
-            }
+            HttpStatusCode.Conflict -> error("Upload offset $offset does not match the server offset")
             else -> error("Upload failed with status ${uploadResponse.status}. ${uploadResponse.bodyAsText()}")
         }
         return limit.toInt()
