@@ -203,6 +203,7 @@ class Functions(override val config: Config, override val supabaseClient: Supaba
     internal fun HttpRequestBuilder.setRegionHeader(region: FunctionRegion) {
         if (!headers.contains(X_REGION_HEADER)) header(X_REGION_HEADER, region.value)
         if (headers[X_REGION_HEADER] == FunctionRegion.ANY.value) headers.remove(X_REGION_HEADER)
+        headers[X_REGION_HEADER]?.let { url.parameters["forceFunctionRegion"] = it }
     }
 
     override suspend fun parseErrorResponse(response: HttpResponse): RestException {
