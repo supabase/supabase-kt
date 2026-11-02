@@ -11,10 +11,12 @@ import io.github.jan.supabase.realtime.RealtimeMessage
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.realtime
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -24,11 +26,13 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -322,6 +326,255 @@ class RealtimeChannelRejoinTest {
         assertTrue(awaitResult(subscribing).isSuccess)
     }
 
+    @Test
+    fun testBlockingSubscribeFailsWhenTheClientDisconnects() = runRejoinTest { client, sockets ->
+        client.realtime.connect()
+        val socket = sockets.created.single()
+        val channel = client.channel(channelId)
+        val subscribing = async(Dispatchers.Default) { runCatching { channel.subscribe(blockUntilSubscribed = true) } }
+        awaitSent(socket, RealtimeChannel.CHANNEL_EVENT_JOIN)
+        client.realtime.disconnect()
+        val failure = assertIs<RealtimeChannelJoinException>(awaitResult(subscribing).exceptionOrNull())
+        assertNull(failure.error)
+    }
+
+    @Test
+    fun testBlockingSubscribeFailsWhenUnsubscribed() = runRejoinTest { client, sockets ->
+        client.realtime.connect()
+        val socket = sockets.created.single()
+        val channel = client.channel(channelId)
+        val subscribing = async(Dispatchers.Default) { runCatching { channel.subscribe(blockUntilSubscribed = true) } }
+        awaitSent(socket, RealtimeChannel.CHANNEL_EVENT_JOIN)
+        channel.unsubscribe()
+        awaitSent(socket, RealtimeChannel.CHANNEL_EVENT_LEAVE)
+        val failure = assertIs<RealtimeChannelJoinException>(awaitResult(subscribing).exceptionOrNull())
+        assertNull(failure.error)
+    }
+
+    @Test
+    fun testBlockingSubscribeFailsWhenTheChannelIsRemoved() = runRejoinTest { client, sockets ->
+        client.realtime.connect()
+        val socket = sockets.created.single()
+        val channel = client.channel(channelId)
+        val subscribing = async(Dispatchers.Default) { runCatching { channel.subscribe(blockUntilSubscribed = true) } }
+        awaitSent(socket, RealtimeChannel.CHANNEL_EVENT_JOIN)
+        client.realtime.removeChannel(channel)
+        // Like realtime-js, in case the server is about to accept the join
+        awaitSent(socket, RealtimeChannel.CHANNEL_EVENT_LEAVE)
+        val failure = assertIs<RealtimeChannelJoinException>(awaitResult(subscribing).exceptionOrNull())
+        assertNull(failure.error)
+    }
+
+    @Test
+    fun testBlockingSubscribeFailsWhenAllChannelsAreRemoved() = runRejoinTest { client, sockets ->
+        client.realtime.connect()
+        val socket = sockets.created.single()
+        val channel = client.channel(channelId)
+        val subscribing = async(Dispatchers.Default) { runCatching { channel.subscribe(blockUntilSubscribed = true) } }
+        awaitSent(socket, RealtimeChannel.CHANNEL_EVENT_JOIN)
+        client.realtime.removeAllChannels()
+        awaitSent(socket, RealtimeChannel.CHANNEL_EVENT_LEAVE)
+        val failure = assertIs<RealtimeChannelJoinException>(awaitResult(subscribing).exceptionOrNull())
+        assertNull(failure.error)
+    }
+
+    @Test
+    fun testChannelRemovedWhileJoiningDoesNotTimeOutAndRejoin() = runRejoinTest({ timeout = 100.milliseconds }) { client, sockets ->
+        client.realtime.connect()
+        val channel = client.channel(channelId)
+        channel.subscribe()
+        awaitSent(sockets.created.single(), RealtimeChannel.CHANNEL_EVENT_JOIN)
+        client.realtime.removeChannel(channel)
+        // The timeout and the rejoin after it
+        withContext(Dispatchers.Default) { delay(500.milliseconds) }
+        assertNull(client.realtime.subscriptions[topic])
+        assertEquals(1, sockets.created.size, "A rejoin would connect again")
+    }
+
+    @Test
+    fun testChannelRemovedBeforeItsRejoinDoesNotRejoin() = runRejoinTest({ rejoinDelay = 500.milliseconds }) { client, sockets ->
+        client.realtime.connect()
+        val socket = sockets.created.single()
+        val channel = client.channel(channelId)
+        channel.errorFlow().test {
+            channel.subscribe()
+            socket.push(rejected(awaitSent(socket, RealtimeChannel.CHANNEL_EVENT_JOIN)))
+            awaitItem()
+            // Well inside rejoinDelay, for the rejoin to have been scheduled after the error
+            withContext(Dispatchers.Default) { delay(100.milliseconds) }
+            client.realtime.removeChannel(channel)
+            cancelAndIgnoreRemainingEvents()
+        }
+        withContext(Dispatchers.Default) { delay(800.milliseconds) }
+        assertNull(client.realtime.subscriptions[topic])
+        assertEquals(1, sockets.created.size, "A rejoin would connect again")
+    }
+
+    // The join is answered after its timeout, while the rejoin is waiting for rejoinDelay
+    @Test
+    fun testAnswerAfterTheTimeoutCancelsTheRejoin() = runRejoinTest({
+        timeout = 100.milliseconds
+        rejoinDelay = 1.seconds
+    }) { client, sockets ->
+        client.realtime.connect()
+        val socket = sockets.created.single()
+        val channel = client.channel(channelId)
+        channel.errorFlow().test {
+            channel.subscribe()
+            awaitSent(socket, RealtimeChannel.CHANNEL_EVENT_JOIN)
+            assertEquals(RealtimeChannelError.Type.TIMED_OUT, awaitItem().type)
+            socket.push(subscribed())
+            channel.awaitStatus(RealtimeChannel.Status.SUBSCRIBED)
+            withContext(Dispatchers.Default) { delay(1500.milliseconds) }
+            socket.sent.expectNoEvents()
+            assertEquals(RealtimeChannel.Status.SUBSCRIBED, channel.status.value)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    // After a channel error the channel stays SUBSCRIBED until its rejoin, which a message from the server doesn't replace
+    @Test
+    fun testMessageAfterAChannelErrorDoesNotCancelTheRejoin() = runRejoinTest({ rejoinDelay = 100.milliseconds }) { client, sockets ->
+        val channel = client.channel(channelId)
+        val (socket, joinRef) = subscribe(channel, sockets)
+        socket.push(channelError(joinRef))
+        socket.push(subscribed())
+        awaitSent(socket, RealtimeChannel.CHANNEL_EVENT_JOIN)
+    }
+
+    @Test
+    fun testSubscribeAfterGivingUpGetsAllItsAttempts() = runRejoinTest({ maxAttempts = 2 }) { client, sockets ->
+        client.realtime.connect()
+        val socket = sockets.created.single()
+        val channel = client.channel(channelId)
+        val first = async(Dispatchers.Default) { runCatching { channel.subscribe(blockUntilSubscribed = true) } }
+        repeat(2) {
+            socket.push(rejected(awaitSent(socket, RealtimeChannel.CHANNEL_EVENT_JOIN)))
+        }
+        assertTrue(awaitResult(first).isFailure)
+        val second = async(Dispatchers.Default) { runCatching { channel.subscribe(blockUntilSubscribed = true) } }
+        socket.push(rejected(awaitSent(socket, RealtimeChannel.CHANNEL_EVENT_JOIN)))
+        awaitSent(socket, RealtimeChannel.CHANNEL_EVENT_JOIN)
+        socket.push(subscribed())
+        assertTrue(awaitResult(second).isSuccess)
+    }
+
+    @Test
+    fun testBlockingSubscribeFailsWhenDisconnectedWhileConnecting() = runRejoinTest { client, sockets ->
+        sockets.connectionFails = true
+        val channel = client.channel(channelId)
+        val subscribing = async(Dispatchers.Default) { runCatching { channel.subscribe(blockUntilSubscribed = true) } }
+        awaitConnectionAttempt(sockets)
+        client.realtime.disconnect()
+        val failure = assertIs<RealtimeChannelJoinException>(awaitResult(subscribing).exceptionOrNull())
+        assertNull(failure.error)
+    }
+
+    @Test
+    fun testSubscribeReturnsWhenDisconnectedWhileConnecting() = runRejoinTest { client, sockets ->
+        sockets.connectionFails = true
+        val channel = client.channel(channelId)
+        val subscribing = async(Dispatchers.Default) { runCatching { channel.subscribe() } }
+        awaitConnectionAttempt(sockets)
+        client.realtime.disconnect()
+        assertTrue(awaitResult(subscribing).isSuccess)
+    }
+
+    // A removed channel isn't one of the client's channels again until it's subscribed
+    @Test
+    fun testBlockingSubscribeOfARemovedChannelFailsWhenDisconnectedWhileConnecting() = runRejoinTest { client, sockets ->
+        val channel = client.channel(channelId)
+        subscribe(channel, sockets)
+        client.realtime.removeChannel(channel)
+        sockets.connectionFails = true
+        val attempts = sockets.connectionAttempts
+        val subscribing = async(Dispatchers.Default) { runCatching { channel.subscribe(blockUntilSubscribed = true) } }
+        awaitConnectionAttempt(sockets, after = attempts)
+        client.realtime.disconnect()
+        assertIs<RealtimeChannelJoinException>(awaitResult(subscribing).exceptionOrNull())
+    }
+
+    // The attempt can't be cancelled, so its socket is closed when it connects
+    @Test
+    fun testDisconnectWhileConnectingClosesTheSocket() = runRejoinTest { client, sockets ->
+        val connecting = CompletableDeferred<Unit>()
+        sockets.connectionGate = connecting
+        val channel = client.channel(channelId)
+        val subscribing = async(Dispatchers.Default) { runCatching { channel.subscribe(blockUntilSubscribed = true) } }
+        awaitConnectionAttempt(sockets)
+        client.realtime.disconnect()
+        connecting.complete(Unit)
+        assertIs<RealtimeChannelJoinException>(awaitResult(subscribing).exceptionOrNull())
+        val socket = sockets.created.single()
+        assertFalse(socket.hasIncomingMessages, "The socket was left open")
+        socket.sent.expectNoEvents()
+        assertEquals(Realtime.Status.DISCONNECTED, client.realtime.status.value)
+    }
+
+    @Test
+    fun testDisconnectStopsRetryingAFailedConnection() = runRejoinTest({ reconnectDelay = 100.milliseconds }) { client, sockets ->
+        sockets.connectionFails = true
+        val channel = client.channel(channelId)
+        async(Dispatchers.Default) { runCatching { channel.subscribe() } }
+        awaitConnectionAttempt(sockets)
+        client.realtime.disconnect()
+        sockets.connectionFails = false
+        withContext(Dispatchers.Default) { delay(500.milliseconds) }
+        assertEquals(0, sockets.created.size, "The client connected after disconnect()")
+        assertEquals(Realtime.Status.DISCONNECTED, client.realtime.status.value)
+    }
+
+    @Test
+    fun testDisconnectStopsReconnectingAfterALostConnection() = runRejoinTest({ reconnectDelay = 100.milliseconds }) { client, sockets ->
+        client.realtime.connect()
+        val socket = sockets.created.single()
+        socket.lose()
+        withContext(Dispatchers.Default) {
+            withTimeoutOrNull(FLOW_TIMEOUT) {
+                client.realtime.status.first { it == Realtime.Status.DISCONNECTED }
+            } ?: fail("The client didn't notice the lost connection")
+        }
+        client.realtime.disconnect()
+        withContext(Dispatchers.Default) { delay(500.milliseconds) }
+        assertEquals(1, sockets.created.size, "The client reconnected after disconnect()")
+    }
+
+    // The reconnect waits for reconnectDelay while it holds the lock for connecting
+    @Test
+    fun testConnectAfterDisconnectDoesNotWaitForTheReconnect() = runRejoinTest({ reconnectDelay = 1.hours }) { client, sockets ->
+        client.realtime.connect()
+        sockets.created.single().lose()
+        withContext(Dispatchers.Default) {
+            withTimeoutOrNull(FLOW_TIMEOUT) {
+                client.realtime.status.first { it == Realtime.Status.DISCONNECTED }
+            } ?: fail("The client didn't notice the lost connection")
+        }
+        client.realtime.disconnect()
+        awaitResult(async(Dispatchers.Default) { client.realtime.connect() })
+        assertEquals(2, sockets.created.size)
+    }
+
+    @Test
+    fun testClientCanConnectAgainAfterDisconnectingWhileReconnecting() = runRejoinTest({ reconnectDelay = 10.milliseconds }) { client, sockets ->
+        client.realtime.connect()
+        sockets.created.single().lose()
+        withContext(Dispatchers.Default) {
+            withTimeoutOrNull(FLOW_TIMEOUT) {
+                client.realtime.status.first { it == Realtime.Status.DISCONNECTED }
+            } ?: fail("The client didn't notice the lost connection")
+        }
+        client.realtime.disconnect()
+        val channel = client.channel(channelId)
+        val (socket, _) = subscribe(channel, sockets)
+        // A later lost connection is still reconnected
+        socket.lose()
+        withContext(Dispatchers.Default) {
+            withTimeoutOrNull(FLOW_TIMEOUT) {
+                while(sockets.created.size < 3) delay(10.milliseconds)
+            } ?: fail("The client didn't reconnect")
+        }
+    }
+
     private fun runRejoinTest(
         config: Realtime.Config.() -> Unit = {},
         test: suspend TestScope.(SupabaseClient, ScriptedWebsocketFactory) -> Unit,
@@ -357,6 +610,12 @@ class RealtimeChannelRejoinTest {
     private suspend fun <T> awaitResult(deferred: Deferred<T>): T = withContext(Dispatchers.Default) {
         withTimeoutOrNull(FLOW_TIMEOUT) { deferred.await() }
     } ?: fail("subscribe() didn't return within $FLOW_TIMEOUT")
+
+    private suspend fun awaitConnectionAttempt(sockets: ScriptedWebsocketFactory, after: Int = 0) = withContext(Dispatchers.Default) {
+        withTimeoutOrNull(FLOW_TIMEOUT) {
+            while(sockets.connectionAttempts <= after) delay(10.milliseconds)
+        } ?: fail("The client didn't try to connect")
+    }
 
     private suspend fun awaitSent(socket: ScriptedWebsocket, event: String): RealtimeMessage {
         val message = socket.sent.awaitItem()

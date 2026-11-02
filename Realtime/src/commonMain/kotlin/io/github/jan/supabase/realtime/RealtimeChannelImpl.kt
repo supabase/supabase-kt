@@ -96,20 +96,26 @@ internal class RealtimeChannelImpl(
 
     override suspend fun subscribe(blockUntilSubscribed: Boolean) {
         cancelRejoin()
+        joinAttempt.store(0)
         joinEnded.value = null
         join(blockUntilSubscribed)
     }
 
     @OptIn(SupabaseInternal::class)
     private suspend fun join(blockUntilSubscribed: Boolean) {
-        if(realtimeImpl.status.value != Realtime.Status.CONNECTED) {
-            if(!realtimeImpl.config.connectOnSubscribe) error("You can't subscribe to a channel while the realtime client is not connected. Did you forget to call `realtime.connect()`?")
-            realtimeImpl.connect()
-            // If connect fails, it will schedule a retry, wait for the connection
-            realtimeImpl.status.first { it == Realtime.Status.CONNECTED }
-        }
+        val connected = realtimeImpl.status.value == Realtime.Status.CONNECTED
+        if(!connected && !realtimeImpl.config.connectOnSubscribe) error("You can't subscribe to a channel while the realtime client is not connected. Did you forget to call `realtime.connect()`?")
+        // Before connecting, so that disconnect() can end the join
         if(!realtimeImpl.subscriptions.containsKey(topic)) {
             realtime.addChannel(this)
+        }
+        if(!connected) {
+            realtimeImpl.connect()
+            // If connect fails, it will schedule a retry, wait for the connection
+            awaitConnection()?.let {
+                if(blockUntilSubscribed) throw RealtimeChannelJoinException(it.message, it.error)
+                return
+            }
         }
         val initialWebsocket = realtime.websocket
         if(checkWebsocket(initialWebsocket, "Not connected to websocket while trying to subscribe")) return
@@ -154,6 +160,12 @@ internal class RealtimeChannelImpl(
             }.first { it }
         }
     }
+
+    // Null once connected, or why the channel stopped trying to join before that
+    private suspend fun awaitConnection(): JoinEnded? =
+        combine(realtimeImpl.status, joinEnded) { status, ended -> (status == Realtime.Status.CONNECTED) to ended }
+            .first { (connected, ended) -> connected || ended != null }
+            .second
 
     @OptIn(ExperimentalContracts::class)
     private fun checkWebsocket(websocket: RealtimeWebsocket?, message: String): Boolean {
@@ -291,6 +303,7 @@ internal class RealtimeChannelImpl(
     }
 
     override suspend fun unsubscribe() {
+        endJoin("Channel $topic was unsubscribed", null)
         updateStatus(RealtimeChannel.Status.UNSUBSCRIBING)
         logger.d { "Unsubscribing from channel $topic" }
         val websocket = realtime.websocket
@@ -465,6 +478,8 @@ internal class RealtimeChannelImpl(
     override fun updateStatus(status: RealtimeChannel.Status) {
         when(status) {
             RealtimeChannel.Status.SUBSCRIBED -> {
+                // A late answer to a join that's being retried. A joined channel still rejoins after a channel error.
+                if(_status.value == RealtimeChannel.Status.SUBSCRIBING) cancelRejoin()
                 joinAttempt.store(0)
                 cancelJoinTimeout()
             }

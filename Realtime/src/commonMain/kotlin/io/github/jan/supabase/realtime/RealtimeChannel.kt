@@ -45,9 +45,9 @@ interface RealtimeChannel {
     /**
      * Subscribes to the channel
      * @param blockUntilSubscribed if true, the method will block the coroutine until the [status] is [Status.SUBSCRIBED].
-     * It keeps waiting while the connection is lost, since the channel rejoins when the client reconnects.
+     * It keeps waiting while the connection is lost, since the channel rejoins when the client reconnects, but not after [Realtime.disconnect].
      * @throws RealtimeChannelJoinException if [blockUntilSubscribed] is true and the channel stops trying to join before it's
-     * subscribed: it gave up after [Realtime.Config.maxAttempts] or was closed
+     * subscribed: it gave up after [Realtime.Config.maxAttempts], was closed, unsubscribed or removed, or the client disconnected
      */
     suspend fun subscribe(blockUntilSubscribed: Boolean = false)
 
