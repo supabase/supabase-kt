@@ -121,13 +121,14 @@ internal class RealtimeChannelImpl(
         val postgrestChanges = clientChanges.toList()
         presenceJoinConfig.enabled = shouldEnablePresence()
         val joinConfig = RealtimeJoinPayload(RealtimeJoinConfig(broadcastJoinConfig, presenceJoinConfig, postgrestChanges, isPrivate))
+        val joinPayload = Json.encodeToJsonElement(joinConfig).jsonObject
         val joinConfigObject = buildJsonObject {
-            putJsonObject(Json.encodeToJsonElement(joinConfig).jsonObject)
+            putJsonObject(joinPayload)
             currentJwt?.let {
                 put("access_token", currentJwt)
             }
         }
-        logger.d { "Subscribing to channel with body $joinConfigObject" }
+        logger.d { "Subscribing to channel with body $joinPayload" }
         val websocket = realtime.websocket
         if(checkWebsocket(websocket, "Not connected to websocket while trying to subscribe")) return
         realtimeImpl.send(
