@@ -449,6 +449,144 @@ class PostgrestFilterBuilderTest {
     }
 
     @Test
+    fun or_repeated_keepsEveryBlock() {
+        val params = filterParams {
+            or {
+                eq("id", 1)
+                eq("id", 2)
+            }
+            or {
+                eq("id", 2)
+                eq("id", 3)
+            }
+        }
+        assertEquals(mapOf("or" to listOf("(id.eq.1,id.eq.2)", "(id.eq.2,id.eq.3)")), params)
+    }
+
+    @Test
+    fun and_repeated_keepsEveryBlock() {
+        val params = filterParams {
+            and {
+                eq("id", 1)
+                eq("id", 2)
+            }
+            and {
+                eq("id", 2)
+                eq("id", 3)
+            }
+        }
+        assertEquals(mapOf("and" to listOf("(id.eq.1,id.eq.2)", "(id.eq.2,id.eq.3)")), params)
+    }
+
+    @Test
+    fun or_repeated_negated_keepsEveryBlock() {
+        val params = filterParams {
+            or(negate = true) { eq("id", 1) }
+            or(negate = true) { eq("id", 2) }
+        }
+        assertEquals(mapOf("not.or" to listOf("(id.eq.1)", "(id.eq.2)")), params)
+    }
+
+    @Test
+    fun and_repeated_negated_keepsEveryBlock() {
+        val params = filterParams {
+            and(negate = true) { eq("id", 1) }
+            and(negate = true) { eq("id", 2) }
+        }
+        assertEquals(mapOf("not.and" to listOf("(id.eq.1)", "(id.eq.2)")), params)
+    }
+
+    @Test
+    fun or_repeated_referencedTable_keepsEveryBlock() {
+        val params = filterParams {
+            or(referencedTable = "shops") { eq("id", 1) }
+            or(referencedTable = "shops") { eq("id", 2) }
+        }
+        assertEquals(mapOf("shops.or" to listOf("(id.eq.1)", "(id.eq.2)")), params)
+    }
+
+    @Test
+    fun and_repeated_referencedTable_keepsEveryBlock() {
+        val params = filterParams {
+            and(referencedTable = "shops") { eq("id", 1) }
+            and(referencedTable = "shops") { eq("id", 2) }
+        }
+        assertEquals(mapOf("shops.and" to listOf("(id.eq.1)", "(id.eq.2)")), params)
+    }
+
+    @Test
+    fun or_repeated_negated_referencedTable_keepsEveryBlock() {
+        val params = filterParams {
+            or(negate = true, referencedTable = "shops") { eq("id", 1) }
+            or(negate = true, referencedTable = "shops") { eq("id", 2) }
+        }
+        assertEquals(mapOf("not.shops.or" to listOf("(id.eq.1)", "(id.eq.2)")), params)
+    }
+
+    @Test
+    fun or_repeated_differentKeys_stayApart() {
+        val params = filterParams {
+            or { eq("id", 1) }
+            or(negate = true) { eq("id", 2) }
+            or(referencedTable = "shops") { eq("id", 3) }
+        }
+        assertEquals(
+            mapOf(
+                "or" to listOf("(id.eq.1)"),
+                "not.or" to listOf("(id.eq.2)"),
+                "shops.or" to listOf("(id.eq.3)")
+            ),
+            params
+        )
+    }
+
+    @Test
+    fun or_repeated_acrossFilterBlocks_keepsEveryBlock() {
+        //PostgrestRequestBuilder.filter creates one builder per call, all writing to the same params
+        val shared = mutableMapOf<String, List<String>>()
+        PostgrestFilterBuilder(PropertyConversionMethod.NONE, shared).or { eq("id", 1) }
+        PostgrestFilterBuilder(PropertyConversionMethod.NONE, shared).or { eq("id", 2) }
+        assertEquals(mapOf("or" to listOf("(id.eq.1)", "(id.eq.2)")), shared)
+    }
+
+    @Test
+    fun or_repeated_skipsEmptyBlocks() {
+        val params = filterParams {
+            or { eq("id", 1) }
+            or { }
+        }
+        assertEquals(mapOf("or" to listOf("(id.eq.1)")), params)
+    }
+
+    @Test
+    fun or_repeated_nested() {
+        val params = filterParams {
+            and {
+                or {
+                    eq("id", 1)
+                    eq("id", 2)
+                }
+                or {
+                    eq("id", 3)
+                    eq("id", 4)
+                }
+            }
+        }
+        assertEquals(mapOf("and" to listOf("(or(id.eq.1,id.eq.2),or(id.eq.3,id.eq.4))")), params)
+    }
+
+    @Test
+    fun and_repeated_nested_negated() {
+        val params = filterParams {
+            or {
+                and(negate = true) { eq("id", 1) }
+                and(negate = true) { eq("id", 2) }
+            }
+        }
+        assertEquals(mapOf("or" to listOf("(not.and(id.eq.1),not.and(id.eq.2))")), params)
+    }
+
+    @Test
     fun sl() {
         val filter = filterToString {
             sl("id", 1L to 10L)
@@ -911,6 +1049,10 @@ class PostgrestFilterBuilderTest {
             }
         }
         assertEquals("or=(a.sl.\"[1,2)\")", logical)
+    }
+
+    private fun filterParams(builder: PostgrestFilterBuilder.() -> Unit): Map<String, List<String>> {
+        return PostgrestFilterBuilder(PropertyConversionMethod.NONE).apply(block = builder).params
     }
 
     private fun filterToString(builder: PostgrestFilterBuilder.() -> Unit): String {
