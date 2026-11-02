@@ -297,6 +297,40 @@ class PostgrestTest {
     }
 
     @Test
+    fun testInsertEscapesColumnNames() {
+        val body = JsonArray(listOf(buildJsonObject {
+            put("a\"b", 1)
+            put("c\\d", 2)
+        }))
+        testClient(
+            request = { table ->
+                from(table).insert(body)
+            },
+            requestHandler = {
+                assertEquals("\"a\\\"b\",\"c\\\\d\"", it.url.parameters["columns"])
+                respond("")
+            }
+        )
+    }
+
+    @Test
+    fun testUpsertEscapesColumnNames() {
+        val body = JsonArray(listOf(buildJsonObject {
+            put("a\"b", 1)
+            put("c\\d", 2)
+        }))
+        testClient(
+            request = { table ->
+                from(table).upsert(body)
+            },
+            requestHandler = {
+                assertEquals("\"a\\\"b\",\"c\\\\d\"", it.url.parameters["columns"])
+                respond("")
+            }
+        )
+    }
+
+    @Test
     fun testUpdate() {
         val body = buildJsonObject {
             put("key", "value")

@@ -81,26 +81,26 @@ class PostgrestFilterBuilder(
      */
     fun like(column: String, pattern: String) = filter(column, FilterOperator.LIKE, pattern)
 
+    private fun filterQuantifiedLike(column: String, operator: String, patterns: List<String>) {
+        val array = patterns.joinToString(",", prefix = "{", postfix = "}") { escapeArrayLiteralElement(it) }
+        val columnValue = params[column] ?: emptyList()
+        _params[column] = columnValue + listOf("$operator.${quoteInLogicalExpression(array, isInLogicalExpression)}")
+    }
+
     /**
      * Finds all rows where the value of the [column] matches all of the specified [patterns]
      *
      * An empty [patterns] list matches every row, because PostgreSQL evaluates `ALL` over an empty array as true.
      * Check the list before using this filter in a `delete` or `update`.
      */
-    fun likeAll(column: String, patterns: List<String>) {
-        val columnValue = params[column] ?: emptyList()
-        _params[column] = columnValue + listOf("like(all).{${patterns.joinToString(",") { escapeArrayLiteralElement(it) }}}")
-    }
+    fun likeAll(column: String, patterns: List<String>) = filterQuantifiedLike(column, "like(all)", patterns)
 
     /**
      * Finds all rows where the value of the [column] matches any of the specified [patterns]
      *
      * An empty [patterns] list matches no rows, because PostgreSQL evaluates `ANY` over an empty array as false.
      */
-    fun likeAny(column: String, patterns: List<String>) {
-        val columnValue = params[column] ?: emptyList()
-        _params[column] = columnValue + listOf("like(any).{${patterns.joinToString(",") { escapeArrayLiteralElement(it) }}}")
-    }
+    fun likeAny(column: String, patterns: List<String>) = filterQuantifiedLike(column, "like(any)", patterns)
 
     /**
      * Finds all rows where the value of the [column] matches all of the specified [patterns] (case-insensitive)
@@ -108,20 +108,14 @@ class PostgrestFilterBuilder(
      * An empty [patterns] list matches every row, because PostgreSQL evaluates `ALL` over an empty array as true.
      * Check the list before using this filter in a `delete` or `update`.
      */
-    fun ilikeAll(column: String, patterns: List<String>) {
-        val columnValue = params[column] ?: emptyList()
-        _params[column] = columnValue + listOf("ilike(all).{${patterns.joinToString(",") { escapeArrayLiteralElement(it) }}}")
-    }
+    fun ilikeAll(column: String, patterns: List<String>) = filterQuantifiedLike(column, "ilike(all)", patterns)
 
     /**
      * Finds all rows where the value of the [column] matches any of the specified [patterns] (case-insensitive)
      *
      * An empty [patterns] list matches no rows, because PostgreSQL evaluates `ANY` over an empty array as false.
      */
-    fun ilikeAny(column: String, patterns: List<String>) {
-        val columnValue = params[column] ?: emptyList()
-        _params[column] = columnValue + listOf("ilike(any).{${patterns.joinToString(",") { escapeArrayLiteralElement(it) }}}")
-    }
+    fun ilikeAny(column: String, patterns: List<String>) = filterQuantifiedLike(column, "ilike(any)", patterns)
 
     /**
      * Finds all rows where the value of the [column] matches the specified [pattern] (case-insensitive)
@@ -248,8 +242,9 @@ class PostgrestFilterBuilder(
      */
     fun textSearch(column: String, query: String, textSearchType: TextSearchType, config: String? = null): PostgrestFilterBuilder {
         val configPart = if (config === null) "" else "(${config})"
+        val value = if (isInLogicalExpression) escapeValue(query) else query
         val columnValue = params[column] ?: emptyList()
-        _params[column] = columnValue + listOf("${textSearchType.identifier}fts${configPart}.${query}")
+        _params[column] = columnValue + listOf("${textSearchType.identifier}fts${configPart}.${value}")
         return this
     }
 
