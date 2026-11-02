@@ -74,7 +74,7 @@ sealed interface DefaultAuthProvider<C, R> : AuthProvider<C, R> {
         val body = encodeCredentials(config)
         val gotrue = supabaseClient.auth as AuthImpl
         var codeChallenge: String? = null
-        if(gotrue.config.flowType == FlowType.PKCE) {
+        if(this != Phone && gotrue.config.flowType == FlowType.PKCE) {
             val codeVerifier = generateCodeVerifier()
             gotrue.codeVerifierCache.saveCodeVerifier(codeVerifier)
             codeChallenge = generateCodeChallenge(codeVerifier)

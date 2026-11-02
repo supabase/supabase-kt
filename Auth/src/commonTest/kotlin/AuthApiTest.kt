@@ -178,7 +178,7 @@ class AuthRequestTest {
                 assertEquals(expectedPassword, body["password"]?.jsonPrimitive?.content)
                 assertEquals(captchaToken, metaSecurity["captcha_token"]?.jsonPrimitive?.content)
                 assertEquals(userData, body["data"]!!.jsonObject)
-                containsCodeChallenge(body)
+                assertNull(body["code_challenge"])
                 respondJson(
                     sampleSessionWithUserData()
                 )
@@ -216,7 +216,7 @@ class AuthRequestTest {
                 assertEquals(expectedPassword, body["password"]?.jsonPrimitive?.content)
                 assertEquals(captchaToken, metaSecurity["captcha_token"]?.jsonPrimitive?.content)
                 assertEquals(userData, body["data"]!!.jsonObject)
-                containsCodeChallenge(body)
+                assertNull(body["code_challenge"])
                 respondJson(
                     sampleUserObject(phone = expectedPhone)
                 )
