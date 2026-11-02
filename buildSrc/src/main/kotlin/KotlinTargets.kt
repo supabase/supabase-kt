@@ -1,4 +1,5 @@
-import com.android.build.api.dsl.androidLibrary
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
+import org.gradle.api.plugins.ExtensionAware
 import org.gradle.kotlin.dsl.assign
 import org.gradle.kotlin.dsl.extra
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
@@ -41,18 +42,25 @@ fun KotlinMultiplatformExtension.configuredJvmTarget(jvmTarget: JvmTarget = JvmT
     }
 }
 
+internal fun KotlinMultiplatformExtension.androidLibrary(
+    block: KotlinMultiplatformAndroidLibraryTarget.() -> Unit
+) {
+    (this as ExtensionAware).extensions.configure("androidLibrary", block)
+}
+
 fun KotlinMultiplatformExtension.configuredAndroidTarget(
     jvmTarget: JvmTarget = JvmTarget.JVM_1_8,
 ) {
     androidLibrary {
-        compileSdk = 36
-        minSdk = 23
-        this.namespace = namespace ?: "${project.extra["base-group"].toString().replace("-", ".")}.${project.name.replace("-", "")}.library"
-        compilations.configureEach {
-            compilerOptions.configure {
-                this.jvmTarget.set(jvmTarget)
-            }
+        compilerOptions {
+            this.jvmTarget.set(jvmTarget)
         }
+        compileSdk = 37
+        minSdk = 23
+        aarMetadata {
+            minCompileSdk = 23
+        }
+        this.namespace = namespace ?: "${project.extra["base-group"].toString().replace("-", ".")}.${project.name.replace("-", "")}.library"
     }
 }
 

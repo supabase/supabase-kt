@@ -8,7 +8,7 @@ plugins {
     id(libs.plugins.kotlin.multiplatform.get().pluginId)
     id(libs.plugins.compose.plugin.get().pluginId)
     alias(libs.plugins.compose.compiler)
-    id(libs.plugins.android.library.get().pluginId)
+    id(libs.plugins.android.kotlin.multiplatform.library.get().pluginId)
     alias(libs.plugins.kotlinx.plugin.serialization)
 }
 
@@ -26,7 +26,7 @@ kotlin {
         }
     }
     compilerOptions.freeCompilerArgs.add("-Xexpect-actual-classes")
-    androidTarget()
+    configuredAndroidTarget()
     jvmToolchain(11)
     jvm("desktop") {
         compilerOptions {
@@ -89,5 +89,3 @@ kotlin {
         }
     }
 }
-
-configureLibraryAndroidTarget("io.github.jan.supabase.common", 26, JavaVersion.VERSION_11)

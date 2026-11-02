@@ -72,7 +72,7 @@ class PostgrestQueryBuilder(
             this.body = body
             request()
             val columns = body.flatMap { it.jsonObject.keys }.distinct()
-            if(columns.isNotEmpty()) params["columns"] = listOf(columns.joinToString(","))
+            if(columns.isNotEmpty()) params["columns"] = listOf(columns.joinToString(",") { "\"$it\"" })
         }
         return RestRequestExecutor.execute(postgrest = postgrest, path = table, request = requestBuilder)
     }
@@ -137,7 +137,7 @@ class PostgrestQueryBuilder(
             this.body = body
             request()
             val columns = body.flatMap { it.jsonObject.keys }.distinct()
-            if(columns.isNotEmpty()) params["columns"] = listOf(columns.joinToString(","))
+            if(columns.isNotEmpty()) params["columns"] = listOf(columns.joinToString(",") { "\"$it\"" })
         }
         return RestRequestExecutor.execute(postgrest = postgrest, path = table, request = requestBuilder)
     }

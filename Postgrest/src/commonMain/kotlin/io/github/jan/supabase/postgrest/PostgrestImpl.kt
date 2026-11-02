@@ -14,7 +14,11 @@ import io.github.jan.supabase.postgrest.query.request.RpcRequestBuilder
 import io.github.jan.supabase.postgrest.result.PostgrestResult
 import io.ktor.client.plugins.timeout
 import io.ktor.client.statement.HttpResponse
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 internal class PostgrestImpl(override val supabaseClient: SupabaseClient, override val config: Postgrest.Config) : Postgrest {
 
@@ -65,12 +69,27 @@ internal class PostgrestImpl(override val supabaseClient: SupabaseClient, overri
     private suspend fun rpcRequest(function: String, body: JsonObject? = null, request: RpcRequestBuilder.() -> Unit): PostgrestResult {
         val requestBuilder = RpcRequestBuilder(config.defaultSchema, config.propertyConversionMethod).apply {
             this.body = body
-            if(method != RpcMethod.POST && body != null) {
-                params.putAll(body.mapValues { listOf(it.value.toString()) })
-            }
             request()
+            if(method != RpcMethod.POST && body != null) {
+                params.putAll(body.mapValues { listOf(it.value.toRpcParameter()) })
+            }
         }
         return RestRequestExecutor.execute(postgrest = this, path = "rpc/$function", request = requestBuilder)
     }
+
+    private fun JsonElement.toRpcParameter(): String = when (this) {
+        is JsonArray -> joinToString(",", "{", "}") { it.toArrayElement() }
+        is JsonPrimitive -> if (isString) content else toString()
+        is JsonObject -> toString()
+    }
+
+    private fun JsonElement.toArrayElement(): String = when (this) {
+        is JsonNull -> "NULL"
+        is JsonArray -> toRpcParameter()
+        is JsonPrimitive -> if (isString) quoteArrayElement(content) else content
+        is JsonObject -> quoteArrayElement(toString())
+    }
+
+    private fun quoteArrayElement(value: String) = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
 }

@@ -16,4 +16,5 @@ dependencies {
     implementation(libs.publishing.gradle)
     implementation(libs.compose.gradle)
     implementation(libs.power.assert.gradle)
+    implementation(libs.android.library.gradle)
 }

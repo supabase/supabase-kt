@@ -1,38 +1,38 @@
 [versions]
-kotlin = "2.4.0"
+kotlin = "2.4.21"
 accompanist-permissions = "0.37.3"
-ktor = "3.5.1"
+ktor = "3.6.0"
 dokka = "2.2.0"
 kotlinx-datetime = "0.8.0"
-kermit = "2.1.0"
+kermit = "2.2.0"
 coroutines = "1.11.0"
-android-lifecycle = "2.10.0"
+android-lifecycle = "2.11.0"
 androidx-startup = "1.2.0"
 androidx-activity-compose = "1.13.0"
 multiplatform-settings = "1.3.0"
 complete-kotlin = "1.1.0"
-agp = "8.11.1"
+agp = "9.2.1"
 maven-publish = "0.37.0"
 apollo-kotlin = "5.0.1"
 serialization = "1.11.0"
 #korlibs = "6.0.0"
 detekt = "1.23.8"
 moshi = "1.15.2"
-jackson = "2.22.1"
+jackson = "2.22.3"
 browser = "1.10.0"
 compose = "1.11.1"
 coil2 = "2.7.0"
-okio = "3.17.0"
+okio = "3.18.2"
 koin = "4.2.2"
-androidx-core = "1.18.0"
-androidx-compat = "1.7.1"
-androidx-lifecycle = "2.10.0"
+androidx-core = "1.19.1"
+androidx-compat = "1.8.0"
+androidx-lifecycle = "2.11.0"
 filekit = "0.8.8"
 kotlinx-browser = "0.5.0"
-immutable-collections = "0.5.1"
+immutable-collections = "0.5.2"
 crypto = "0.6.0"
 jwt-kt = "1.2.1"
-supabase-kt-plugins = "3.6.0" # https://github.com/supabase-community/supabase-kt-plugins
+supabase-kt-plugins = "3.8.0" # https://github.com/supabase-community/supabase-kt-plugins
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -67,6 +67,7 @@ detekt-gradle = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", v
 dokka-gradle = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
 publishing-gradle = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "maven-publish" }
 compose-gradle = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "compose" }
+android-library-gradle = { module = "com.android.kotlin.multiplatform.library:com.android.kotlin.multiplatform.library.gradle.plugin", version.ref = "agp" }
 
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }

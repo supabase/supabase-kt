@@ -49,7 +49,8 @@ libraryModules {
     applyPublishing()
 }
 
-val reportMerge by tasks.registering(io.gitlab.arturbosch.detekt.report.ReportMergeTask::class) {
+val reportMerge = tasks.register<io.gitlab.arturbosch.detekt.report.ReportMergeTask>("reportMerge") {
+    description = "Merges all detekt reports into a single file"
     output.set(rootProject.layout.buildDirectory.file("reports/detekt/merge.sarif"))
 }
 
@@ -60,6 +61,7 @@ libraryModules(false) {
 }
 
 tasks.register("detektAll") {
+    description = "Runs detekt on all modules"
     libraryModules(false) {
         this@register.dependsOn(tasks.withType<io.gitlab.arturbosch.detekt.Detekt>())
     }
@@ -76,8 +78,8 @@ configure(allprojects.filter { it.parent?.name == "sample" }) {
 }
 
 rootProject.plugins.withType(org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin::class.java) {
-    rootProject.the<YarnRootExtension>().yarnLockMismatchReport =
+    rootProject.the<YarnRootExtension>().yarnLockMismatchReportProperty =
         YarnLockMismatchReport.WARNING
-    rootProject.the<YarnRootExtension>().reportNewYarnLock = false
-    rootProject.the<YarnRootExtension>().yarnLockAutoReplace = true
+    rootProject.the<YarnRootExtension>().reportNewYarnLockProperty = false
+    rootProject.the<YarnRootExtension>().yarnLockAutoReplaceProperty = true
 }

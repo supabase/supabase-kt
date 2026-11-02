@@ -499,6 +499,40 @@ class RealtimeChannelTest {
         }
     }
 
+    @Test
+    fun testPresenceStateReplacesHeldPresences() {
+        val channelId = "channelId"
+        val alice = Presence("ref1", buildJsonObject { put("name", "Alice") })
+        val bob = Presence("ref2", buildJsonObject { put("name", "Bob") })
+        val carol = Presence("ref3", buildJsonObject { put("name", "Carol") })
+        runTest {
+            createTestClient(
+                wsHandler = { i, o ->
+                    handleSubscribe(i, o, channelId)
+                    o.sendPresenceState(channelId, mapOf("user1" to alice, "user2" to bob))
+                    o.sendPresenceState(channelId, mapOf("user2" to bob, "user3" to carol))
+                },
+                supabaseHandler = {
+                    val channel = it.channel(channelId)
+                    coroutineScope {
+                        launch {
+                            channel.presenceChangeFlow().test(FLOW_TIMEOUT) {
+                                awaitItem()
+                                val action = awaitItem()
+                                assertEquals(mapOf("user2" to bob, "user3" to carol), action.joins)
+                                assertEquals(mapOf("user1" to alice), action.leaves)
+                                assertEquals(listOf("Bob", "Carol"), channel.currentPresences<PresenceUser>().map { p -> p.name }.sorted())
+                            }
+                        }
+                        launch {
+                            channel.subscribe(true)
+                        }
+                    }.join()
+                }
+            )
+        }
+    }
+
     //For more complex tests we need integration tests
 
     private fun RealtimeChannel.flowFromEventType(event: String, schema: String, table: String, filter: FilterOperation): Flow<PostgresAction> {

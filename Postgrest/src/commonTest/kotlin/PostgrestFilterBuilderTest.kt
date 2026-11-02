@@ -703,6 +703,15 @@ class PostgrestFilterBuilderTest {
     }
 
     @Test
+    fun textSearchKeepsOtherFiltersOnTheColumn() {
+        val params = PostgrestFilterBuilder(PropertyConversionMethod.NONE).apply {
+            ilike("description", "%fruit%")
+            textSearch("description", "apple", TextSearchType.PLAINTO)
+        }.params
+        assertEquals(listOf("ilike.%fruit%", "plfts.apple"), params["description"])
+    }
+
+    @Test
     fun csPair() {
         val filter = filterToString {
             filter("id", FilterOperator.CS, 1 to 2)

@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    id(libs.plugins.android.library.get().pluginId)
+    id(libs.plugins.android.kotlin.multiplatform.library.get().pluginId)
     id(libs.plugins.compose.plugin.get().pluginId)
     alias(libs.plugins.compose.compiler)
     id(libs.plugins.kotlin.multiplatform.get().pluginId)
@@ -16,7 +16,7 @@ version = "1.0-SNAPSHOT"
 @OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
     jvmToolchain(11)
-    androidTarget()
+    configuredAndroidTarget()
     jvm("desktop") {
         compilerOptions {
             jvmTarget = JvmTarget.JVM_11
@@ -75,4 +75,3 @@ kotlin {
     }
 }
 
-configureLibraryAndroidTarget("io.github.jan.supabase.common", 26, JavaVersion.VERSION_11)

@@ -159,16 +159,9 @@ internal class BucketApiImpl(
                     put("transform", transform)
                 }
             }
-        }) {
-            modifier.cacheNonce?.let {
-                url.parameters.append("cacheNonce", it)
-            }
-            modifier.download?.let {
-                url.parameters.append("download", it.fileName ?: "")
-            }
-        }.safeBody<JsonObject>()
-        return storage.resolveUrl(body["signedURL"]?.jsonPrimitive?.content?.substring(1)
-            ?: error("Expected signed url in response"))
+        }).safeBody<JsonObject>()
+        val signedUrl = body["signedURL"]?.jsonPrimitive?.content ?: error("Expected signed url in response")
+        return resolveSignedUrl(signedUrl, modifier)
     }
 
     override suspend fun createSignedUrls(
@@ -182,18 +175,17 @@ internal class BucketApiImpl(
                 paths.forEach(this::add)
             }
             put("expiresIn", expiresIn.inWholeSeconds)
-        }) {
-            modifier.cacheNonce?.let {
-                url.parameters.append("cacheNonce", it)
-            }
-            modifier.download?.let {
-                url.parameters.append("download", it.fileName ?: "")
-            }
-        }.safeBody<List<SignedUrl>>().map {
-            it.copy(signedURL = storage.resolveUrl(it.signedURL.substring(1)))
+        }).safeBody<List<SignedUrl>>().map {
+            it.copy(signedURL = resolveSignedUrl(it.signedURL, modifier))
         }
         return body
     }
+
+    private fun resolveSignedUrl(signedUrl: String, modifier: BucketUrlBuilder.WithForceDownload): String =
+        buildUrl(storage.resolveUrl(signedUrl.substring(1))) {
+            modifier.cacheNonce?.let { parameters.append("cacheNonce", it) }
+            modifier.download?.let { parameters.append("download", it.fileName ?: "") }
+        }
 
     override suspend fun downloadAuthenticated(
         path: String,
@@ -265,10 +257,11 @@ internal class BucketApiImpl(
                if(!transformation.isEmpty()) transform(options.transform)
                cacheNonce = options.cacheNonce
             }
-            false -> if (transformation.isEmpty()) authenticatedUrl(path) else authenticatedRenderUrl(
-                path,
-                options.transform
-            )
+            false -> buildUrl(
+                if (transformation.isEmpty()) authenticatedUrl(path) else authenticatedRenderUrl(path, options.transform)
+            ) {
+                options.cacheNonce?.let { parameters.append("cacheNonce", it) }
+            }
         }
         method = HttpMethod.Get
         url(url)
@@ -321,7 +314,6 @@ internal class BucketApiImpl(
         val key = response["Key"]?.jsonPrimitive?.content
             ?: error("Expected a key in a upload response")
         val id = response["Id"]?.jsonPrimitive?.content
-            ?: error("Expected an id in a upload response")
         return FileUploadResponse(id, path, key)
     }
 

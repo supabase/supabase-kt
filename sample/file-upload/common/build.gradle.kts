@@ -9,7 +9,7 @@ plugins {
     id(libs.plugins.kotlin.multiplatform.get().pluginId)
     id(libs.plugins.compose.plugin.get().pluginId)
     alias(libs.plugins.compose.compiler)
-    id(libs.plugins.android.library.get().pluginId)
+    id(libs.plugins.android.kotlin.multiplatform.library.get().pluginId)
     alias(libs.plugins.kotlinx.plugin.serialization)
 }
 
@@ -22,7 +22,7 @@ repositories {
 
 kotlin {
     jvmToolchain(11)
-    androidTarget()
+    configuredAndroidTarget()
     jvm("desktop") {
         compilerOptions {
             jvmTarget = JvmTarget.JVM_11
@@ -71,5 +71,3 @@ kotlin {
         }
     }
 }
-
-configureLibraryAndroidTarget("io.github.jan.supabase.common", 26, JavaVersion.VERSION_11)

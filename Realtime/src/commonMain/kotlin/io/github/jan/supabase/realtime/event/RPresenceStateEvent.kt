@@ -12,7 +12,8 @@ data object RPresenceStateEvent : RealtimeEvent {
 
     override suspend fun handle(channel: RealtimeChannel, message: RealtimeMessage) {
         val joins = message.payload.decodeIfNotEmptyOrDefault(mapOf<String, Presence>())
-        channel.callbackManager.triggerPresenceDiff(joins, mapOf())
+        val leaves = channel.callbackManager.presenceState().filterKeys { it !in joins }
+        channel.callbackManager.triggerPresenceDiff(joins, leaves)
     }
 
     override fun appliesTo(message: RealtimeMessage): Boolean {

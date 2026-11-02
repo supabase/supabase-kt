@@ -4,6 +4,7 @@ import io.github.jan.supabase.putJsonObject
 import io.github.jan.supabase.realtime.Presence
 import io.github.jan.supabase.realtime.RealtimeChannel
 import io.github.jan.supabase.realtime.RealtimeChannel.Companion.CHANNEL_EVENT_PRESENCE_DIFF
+import io.github.jan.supabase.realtime.RealtimeChannel.Companion.CHANNEL_EVENT_PRESENCE_STATE
 import io.github.jan.supabase.realtime.RealtimeChannel.Companion.CHANNEL_EVENT_SYSTEM
 import io.github.jan.supabase.realtime.RealtimeJoinPayload
 import io.github.jan.supabase.realtime.RealtimeMessage
@@ -123,6 +124,10 @@ suspend fun SendChannel<Frame>.sendPresence(
         put("joins", transformPresenceMap(joins))
         put("leaves", transformPresenceMap(leaves))
     }, "").toFrame())
+}
+
+suspend fun SendChannel<Frame>.sendPresenceState(channelId: String, state: Map<String, Presence>) {
+    send(RealtimeMessage(RealtimeTopic.withChannelId(channelId), CHANNEL_EVENT_PRESENCE_STATE, transformPresenceMap(state) as JsonObject, "").toFrame())
 }
 
 suspend fun SendChannel<Frame>.sendSystem(channelId: String, extension: String, message: String, status: String) {
