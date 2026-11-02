@@ -28,11 +28,7 @@ fun FilterOperation.escapedValue(isInLogicalExpression: Boolean): String =
         FilterOperator.WFTS,
         FilterOperator.PHFTS,
         FilterOperator.ISDISTINCT,
-        FilterOperator.PLFTS ->
-            if (isInLogicalExpression)
-                escapeValue(value)
-            else
-                value.toString()
+        FilterOperator.PLFTS -> encodeScalar(value, isInLogicalExpression)
         FilterOperator.IN ->
             if (value is List<*>) {
                 encodeAsList(value)
@@ -47,11 +43,7 @@ fun FilterOperation.escapedValue(isInLogicalExpression: Boolean): String =
                     quoteInLogicalExpression(encodeOverlapAsArray(value), isInLogicalExpression)
                 is Pair<*, *> ->
                     quoteInLogicalExpression(encodeOverlapAsRange(value), isInLogicalExpression)
-                else ->
-                    if (isInLogicalExpression)
-                        escapeValue(value)
-                    else
-                        value.toString()
+                else -> encodeScalar(value, isInLogicalExpression)
             }
         FilterOperator.SL,
         FilterOperator.SR,
@@ -61,13 +53,12 @@ fun FilterOperation.escapedValue(isInLogicalExpression: Boolean): String =
             when (value) {
                 is Pair<*, *> -> quoteInLogicalExpression(encodeAsRange(value), isInLogicalExpression)
                 is List<*> -> quoteInLogicalExpression(encodeAsRange(value), isInLogicalExpression)
-                else ->
-                    if (isInLogicalExpression)
-                        escapeValue(value)
-                    else
-                        value.toString()
+                else -> encodeScalar(value, isInLogicalExpression)
             }
     }
+
+private fun encodeScalar(value: Any?, isInLogicalExpression: Boolean): String =
+    if (isInLogicalExpression) escapeValue(value) else value.toString()
 
 private fun encodeAsList(values: List<*>): String =
     values.joinToString(",", prefix = "(", postfix = ")") { escapeValue(it) }
