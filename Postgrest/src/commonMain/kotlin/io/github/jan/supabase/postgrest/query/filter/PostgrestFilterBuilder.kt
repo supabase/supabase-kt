@@ -224,7 +224,8 @@ class PostgrestFilterBuilder(
         }
         val joiningFilter = formatJoiningFilter(filter)
         if(joiningFilter == "()") return //empty logical expressions return a postgrest error
-        _params[prefix + "or"] = listOf(joiningFilter) + if(isInLogicalExpression) _params[prefix + "or"] ?: emptyList() else emptyList()
+        val key = prefix + "or"
+        _params[key] = (_params[key] ?: emptyList()) + listOf(joiningFilter)
     }
 
     /**
@@ -240,7 +241,8 @@ class PostgrestFilterBuilder(
         }
         val joiningFilter = formatJoiningFilter(filter)
         if(joiningFilter == "()") return //empty logical expressions return a postgrest error
-        _params[prefix + "and"] = listOf(joiningFilter) + if(isInLogicalExpression) _params[prefix + "and"] ?: emptyList() else emptyList()
+        val key = prefix + "and"
+        _params[key] = (_params[key] ?: emptyList()) + listOf(joiningFilter)
     }
 
     /**
