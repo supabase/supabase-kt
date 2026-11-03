@@ -19,6 +19,8 @@ import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.respondError
 import io.ktor.client.engine.mock.respondOk
 import io.ktor.client.engine.mock.toByteArray
+import io.ktor.client.plugins.HttpTimeoutCapability
+import io.ktor.client.plugins.HttpTimeoutConfig
 import io.ktor.client.request.HttpRequestData
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -106,6 +108,24 @@ class BucketApiTest {
                     it.headers[BucketApi.UPSERT_HEADER],
                     "Upsert header should be false"
                 )
+            }
+        )
+    }
+
+    @Test
+    fun testUploadUsesIdleTimeoutInsteadOfTotalTimeout() {
+        testUploadMethod(
+            method = HttpMethod.Post,
+            urlPath = "/object/$bucketId/data.png",
+            request = { client, expectedPath, data, meta ->
+                client.storage[bucketId].upload(expectedPath, data) {
+                    userMetadata = meta
+                }
+            },
+            extra = {
+                val timeout = assertNotNull(it.getCapabilityOrNull(HttpTimeoutCapability))
+                assertEquals(HttpTimeoutConfig.INFINITE_TIMEOUT_MS, timeout.requestTimeoutMillis)
+                assertEquals(60.seconds.inWholeMilliseconds, timeout.socketTimeoutMillis)
             }
         )
     }

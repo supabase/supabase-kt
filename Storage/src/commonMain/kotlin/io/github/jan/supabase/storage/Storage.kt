@@ -28,6 +28,7 @@ import io.github.jan.supabase.storage.vectors.StorageVectorsClient
 import io.github.jan.supabase.storage.vectors.StorageVectorsClientImpl
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.timeout
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.parameter
 import io.ktor.client.statement.HttpResponse
 import kotlinx.serialization.json.JsonArray
@@ -162,12 +163,14 @@ interface Storage : MainPlugin<Storage.Config>, CustomSerializationPlugin {
 
     /**
      * Config for the storage plugin
-     * @param transferTimeout the timeout for uploading and downloading files (default: 120 seconds)
+     * @param transferTimeout the maximum total duration of an upload or download. Defaults to [Duration.INFINITE], since how long a transfer takes depends on the file size and connection speed. Stalled transfers are caught by [transferIdleTimeout] instead.
+     * @param transferIdleTimeout the maximum duration without any data being sent or received before an upload or download fails (default: 60 seconds). Not supported by the JS engine.
      * @param resumable the resume settings to use for the storage api
      * @param serializer the serializer to use for the storage api, use null to use the default serializer
      */
     data class Config(
-        var transferTimeout: Duration = 120.seconds,
+        var transferTimeout: Duration = Duration.INFINITE,
+        var transferIdleTimeout: Duration = 60.seconds,
         @PublishedApi internal var resumable: Resumable = Resumable(),
         override var serializer: SupabaseSerializer? = null,
         override var requireValidSession: Boolean = false,
@@ -241,9 +244,7 @@ internal class StorageImpl(override val supabaseClient: SupabaseClient, override
 
     @OptIn(SupabaseInternal::class)
     override val api = supabaseClient.authenticatedSupabaseApi(this, defaultRequest = {
-        timeout {
-            requestTimeoutMillis = config.transferTimeout.inWholeMilliseconds
-        }
+        transferTimeouts(config)
     })
 
     override val analytics: StorageAnalyticsClient = StorageAnalyticsClientImpl(api.resolve("iceberg"))
@@ -341,3 +342,10 @@ internal class StorageImpl(override val supabaseClient: SupabaseClient, override
  */
 val SupabaseClient.storage: Storage
     get() = pluginManager.getPlugin(Storage)
+
+internal fun HttpRequestBuilder.transferTimeouts(config: Storage.Config) {
+    timeout {
+        requestTimeoutMillis = config.transferTimeout.inWholeMilliseconds
+        socketTimeoutMillis = config.transferIdleTimeout.inWholeMilliseconds
+    }
+}
