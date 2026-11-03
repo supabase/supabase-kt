@@ -2,6 +2,7 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.SupabaseClientBuilder
 import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.storage.BucketApi
+import io.github.jan.supabase.storage.DownloadOptionBuilder
 import io.github.jan.supabase.storage.FileObjectV2
 import io.github.jan.supabase.storage.FileUploadResponse
 import io.github.jan.supabase.storage.ImageTransformation
@@ -21,6 +22,7 @@ import io.ktor.client.engine.mock.respondOk
 import io.ktor.client.engine.mock.toByteArray
 import io.ktor.client.plugins.HttpTimeoutCapability
 import io.ktor.client.plugins.HttpTimeoutConfig
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.HttpRequestData
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -126,6 +128,27 @@ class BucketApiTest {
                 val timeout = assertNotNull(it.getCapabilityOrNull(HttpTimeoutCapability))
                 assertEquals(HttpTimeoutConfig.INFINITE_TIMEOUT_MS, timeout.requestTimeoutMillis)
                 assertEquals(60.seconds.inWholeMilliseconds, timeout.socketTimeoutMillis)
+            }
+        )
+    }
+
+    @Test
+    fun testUploadTimeoutOverrideKeepsOtherStorageDefault() {
+        testUploadMethod(
+            method = HttpMethod.Post,
+            urlPath = "/object/$bucketId/data.png",
+            request = { client, expectedPath, data, meta ->
+                client.storage[bucketId].upload(expectedPath, data) {
+                    userMetadata = meta
+                    httpOverride {
+                        timeout { socketTimeoutMillis = 5.seconds.inWholeMilliseconds }
+                    }
+                }
+            },
+            extra = {
+                val timeout = assertNotNull(it.getCapabilityOrNull(HttpTimeoutCapability))
+                assertEquals(HttpTimeoutConfig.INFINITE_TIMEOUT_MS, timeout.requestTimeoutMillis)
+                assertEquals(5.seconds.inWholeMilliseconds, timeout.socketTimeoutMillis)
             }
         )
     }
@@ -594,6 +617,30 @@ class BucketApiTest {
             }
             val data = client.storage[bucketId].downloadPublic(expectedPath)
             assertContentEquals(expectedData, data, "Data should be [1, 2, 3]")
+        }
+    }
+
+    @Test
+    fun testDownloadTimeoutOverrideKeepsOtherStorageDefault() {
+        runTest {
+            val timeouts = mutableListOf<HttpTimeoutConfig?>()
+            client = createMockedSupabaseClient(configuration = configureClient) {
+                timeouts += it.getCapabilityOrNull(HttpTimeoutCapability)
+                respond(byteArrayOf(1, 2, 3))
+            }
+            val override: DownloadOptionBuilder.() -> Unit = {
+                httpOverride {
+                    timeout { requestTimeoutMillis = 5.seconds.inWholeMilliseconds }
+                }
+            }
+            client.storage[bucketId].downloadAuthenticated("data.png", override)
+            client.storage[bucketId].downloadAuthenticated("data.png", ByteChannel(), override)
+            assertEquals(2, timeouts.size)
+            timeouts.forEach { config ->
+                val timeout = assertNotNull(config)
+                assertEquals(5.seconds.inWholeMilliseconds, timeout.requestTimeoutMillis)
+                assertEquals(60.seconds.inWholeMilliseconds, timeout.socketTimeoutMillis)
+            }
         }
     }
 

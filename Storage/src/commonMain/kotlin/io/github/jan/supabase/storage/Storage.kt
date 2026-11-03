@@ -27,7 +27,8 @@ import io.github.jan.supabase.storage.resumable.createDefaultResumableCache
 import io.github.jan.supabase.storage.vectors.StorageVectorsClient
 import io.github.jan.supabase.storage.vectors.StorageVectorsClientImpl
 import io.ktor.client.plugins.HttpRequestTimeoutException
-import io.ktor.client.plugins.timeout
+import io.ktor.client.plugins.HttpTimeoutCapability
+import io.ktor.client.plugins.HttpTimeoutConfig
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.parameter
 import io.ktor.client.statement.HttpResponse
@@ -343,9 +344,13 @@ internal class StorageImpl(override val supabaseClient: SupabaseClient, override
 val SupabaseClient.storage: Storage
     get() = pluginManager.getPlugin(Storage)
 
+/**
+ * Fills in the transfer timeouts the request doesn't set. Ktor's `timeout {}` replaces the whole timeout config and
+ * unset fields fall back to the client-wide values, so this runs again after user overrides to keep the storage defaults.
+ */
 internal fun HttpRequestBuilder.transferTimeouts(config: Storage.Config) {
-    timeout {
-        requestTimeoutMillis = config.transferTimeout.inWholeMilliseconds
-        socketTimeoutMillis = config.transferIdleTimeout.inWholeMilliseconds
-    }
+    val timeout = getCapabilityOrNull(HttpTimeoutCapability) ?: HttpTimeoutConfig()
+    timeout.requestTimeoutMillis = timeout.requestTimeoutMillis ?: config.transferTimeout.inWholeMilliseconds
+    timeout.socketTimeoutMillis = timeout.socketTimeoutMillis ?: config.transferIdleTimeout.inWholeMilliseconds
+    setCapability(HttpTimeoutCapability, timeout)
 }
