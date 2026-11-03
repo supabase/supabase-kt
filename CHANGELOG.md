@@ -31,12 +31,18 @@
 * fix(storage): keep the error and message when an error body has no code by @AndroidPoet in https://github.com/supabase/supabase-kt/pull/1407
 * fix(storage): download variant with channel doesn't throw rest exceptions by @jan-tennert in https://github.com/supabase/supabase-kt/pull/1419
 * fix(storage): return the unencoded path in FileUploadResponse by @RaphaelFakhri in https://github.com/supabase/supabase-kt/pull/1428
+* fix(storage): send cacheNonce on authenticated downloads by @AndroidPoet in https://github.com/supabase/supabase-kt/pull/1453
+* fix(storage): add download and cacheNonce to the signed url, not the sign request by @AndroidPoet in https://github.com/supabase/supabase-kt/pull/1452
+* fix(storage): don't require an id in the uploadToSignedUrl response by @AndroidPoet in https://github.com/supabase/supabase-kt/pull/1457
 
 ### Postgrest
 
 * docs(postgrest): document the empty list behaviour of likeAll, likeAny, ilikeAll and ilikeAny by @AndroidPoet in https://github.com/supabase/supabase-kt/pull/1432
 * fix(postgrest): escape reserved characters in array filter values by @AndroidPoet in https://github.com/supabase/supabase-kt/pull/1403
 * fix(postgrest): allow multiple filters on one column by @jan-tennert in https://github.com/supabase/supabase-kt/pull/1420
+* fix(postgrest): quote column names in the insert and upsert columns parameter by @AndroidPoet in https://github.com/supabase/supabase-kt/pull/1448
+* fix(postgrest): send rpc arguments as query parameters for GET and HEAD by @AndroidPoet in https://github.com/supabase/supabase-kt/pull/1454
+* fix(postgrest): keep other filters on the column when adding a text search by @AndroidPoet in https://github.com/supabase/supabase-kt/pull/1455
 
 ### Realtime (reliability)
 
@@ -48,6 +54,7 @@
 * fix(realtime): Fix race condition when rejoining channels before auth is ready by @jan-tennert in https://github.com/supabase/supabase-kt/pull/1417
 * fix(realtime): Fix race condition when resubscribing channel by @jan-tennert in https://github.com/supabase/supabase-kt/pull/1415
 * fix(realtime): don't take channel messages for heartbeat replies by @sproctor in https://github.com/supabase/supabase-kt/pull/1434
+* fix(realtime): replace the held presences on a presence_state message by @AndroidPoet in https://github.com/supabase/supabase-kt/pull/1451
 
 ### 3.8.0 - August 26, 2026
 
