@@ -44,6 +44,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
+import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.contracts.ExperimentalContracts
@@ -73,6 +74,7 @@ internal class RealtimeChannelImpl(
     private val userPresenceEnabled = presenceJoinConfig.enabled
 
     internal val joinAttempt = AtomicInt(0)
+    internal val joinRequested = AtomicBoolean(false)
     private val joinRef = AtomicReference<String?>(null)
     private val rejoinJob = AtomicReference<Job?>(null)
 
@@ -87,6 +89,7 @@ internal class RealtimeChannelImpl(
     }
 
     override suspend fun subscribe(blockUntilSubscribed: Boolean) {
+        joinRequested.store(true)
         cancelRejoin()
         join(blockUntilSubscribed)
     }
@@ -232,6 +235,7 @@ internal class RealtimeChannelImpl(
     }
 
     override suspend fun unsubscribe() {
+        joinRequested.store(false)
         updateStatus(RealtimeChannel.Status.UNSUBSCRIBING)
         logger.d { "Unsubscribing from channel $topic" }
         val websocket = realtime.websocket
