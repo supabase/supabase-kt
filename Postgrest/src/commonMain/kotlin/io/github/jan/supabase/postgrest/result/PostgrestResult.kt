@@ -23,9 +23,10 @@ class PostgrestResult(val data: String, val headers: Headers, @PublishedApi inte
     /**
      * Returns the range of items returned
      */
-    fun rangeOrNull(): LongRange? = contentRange?.substringBefore("/")?.let {
-        val (start, end) = it.split("-")
-        LongRange(start.toLong(), end.toLong())
+    fun rangeOrNull(): LongRange? {
+        val bounds = contentRange?.substringBefore("/")?.split("-")?.mapNotNull { it.toLongOrNull() }
+        if (bounds?.size != 2) return null
+        return LongRange(bounds[0], bounds[1])
     }
 
     /**
