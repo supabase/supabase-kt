@@ -1,5 +1,6 @@
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.FunctionRegion
+import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.testing.createMockedSupabaseClient
 import io.github.jan.supabase.testing.pathAfterVersion
@@ -16,6 +17,7 @@ import kotlinx.serialization.json.put
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class EdgeFunctionTest {
 
@@ -34,7 +36,8 @@ class EdgeFunctionTest {
                 requestHandler = {
                     assertEquals("POST", it.method.value)
                     assertEquals("/$expectedName", it.url.pathAfterVersion())
-                    assertEquals(expectedRegion.value, it.headers["x-region"])
+                    assertEquals(listOf(expectedRegion.value), it.headers.getAll("x-region"))
+                    assertEquals(expectedRegion.value, it.url.parameters["forceFunctionRegion"])
                     assertEquals("myValue", it.headers["myHeader"])
                     respond("")
                 }
@@ -62,7 +65,8 @@ class EdgeFunctionTest {
                     assertEquals(expectedBody, body)
                     assertEquals("POST", it.method.value)
                     assertEquals("/$expectedName", it.url.pathAfterVersion())
-                    assertEquals(expectedRegion.value, it.headers["x-region"])
+                    assertEquals(listOf(expectedRegion.value), it.headers.getAll("x-region"))
+                    assertEquals(expectedRegion.value, it.url.parameters["forceFunctionRegion"])
                     respond("")
                 }
             )
@@ -84,7 +88,8 @@ class EdgeFunctionTest {
                 requestHandler = {
                     assertEquals("POST", it.method.value)
                     assertEquals("/$expectedName", it.url.pathAfterVersion())
-                    assertEquals(expectedRegion.value, it.headers["x-region"])
+                    assertEquals(listOf(expectedRegion.value), it.headers.getAll("x-region"))
+                    assertEquals(expectedRegion.value, it.url.parameters["forceFunctionRegion"])
                     respond("streaming content")
                 }
             )
@@ -93,6 +98,26 @@ class EdgeFunctionTest {
             statement.execute { response ->
                 assertEquals("streaming content", response.bodyAsText())
             }
+        }
+    }
+
+    @Test
+    fun testInvokingWithAnyRegionSendsNoRegionHeader() {
+        runTest {
+            supabase = createMockedSupabaseClient(
+                configuration = {
+                    install(Functions) {
+                        defaultRegion = FunctionRegion.EU_WEST_1
+                    }
+                },
+                requestHandler = {
+                    assertNull(it.headers["x-region"])
+                    assertNull(it.url.parameters["forceFunctionRegion"])
+                    respond("")
+                }
+            )
+            val function = supabase.functions.buildEdgeFunction("myFunction", FunctionRegion.ANY)
+            function()
         }
     }
 
