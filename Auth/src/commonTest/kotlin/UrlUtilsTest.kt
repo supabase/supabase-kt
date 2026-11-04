@@ -1,4 +1,4 @@
-import io.github.jan.supabase.auth.redirectTo
+import io.supabase.auth.redirectTo
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.url
 import kotlin.test.Test

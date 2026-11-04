@@ -46,7 +46,7 @@ Newest version: [![](https://img.shields.io/github/release/supabase-community/su
 
 ```kotlin
 dependencies {
-    implementation("io.github.jan-tennert.supabase:storage-kt:VERSION")
+    implementation("io.supabase:storage-kt:VERSION")
 }
 ```
 

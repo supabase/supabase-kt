@@ -6,6 +6,6 @@
 
 ```kotlin
 dependencies {
-    implementation("io.github.jan-tennert.supabase:serializer-moshi:VERSION")
+    implementation("io.supabase:serializer-moshi:VERSION")
 }
 ```

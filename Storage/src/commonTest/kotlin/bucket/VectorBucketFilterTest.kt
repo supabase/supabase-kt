@@ -1,6 +1,6 @@
 package bucket
 
-import io.github.jan.supabase.storage.vectors.bucket.VectorBucketFilter
+import io.supabase.storage.vectors.bucket.VectorBucketFilter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

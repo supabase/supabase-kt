@@ -1,5 +1,5 @@
-import io.github.jan.supabase.auth.jwt.JWTUtils
-import io.github.jan.supabase.auth.jwt.JwtHeader
+import io.supabase.auth.jwt.JWTUtils
+import io.supabase.auth.jwt.JwtHeader
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals

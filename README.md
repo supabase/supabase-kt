@@ -14,7 +14,7 @@ For information about supported Kotlin targets, see the corresponding module REA
 *Note: The `WASM-JS` target for supported modules is only available for version 3.0.0 and above*
 
 [![](https://img.shields.io/github/release/supabase-community/supabase-kt?label=stable)](https://github.com/supabase-community/supabase-kt/releases) 
-[![](https://badgen.net/github/release/supabase-community/supabase-kt?label=prerelease)](https://central.sonatype.com/search?q=io.github.jan.supabase&smo=true) 
+[![](https://badgen.net/github/release/supabase-community/supabase-kt?label=prerelease)](https://central.sonatype.com/search?q=io.supabase&smo=true) 
 [![Kotlin](https://img.shields.io/badge/kotlin-2.3.21-blue.svg?logo=kotlin)](http://kotlinlang.org) 
 [![Ktor](https://img.shields.io/badge/ktor-3.4.3-blue)](https://ktor.io/)
 [![slack](https://img.shields.io/badge/slack-%23supabase--kt-purple.svg?logo=slack)](https://kotlinlang.slack.com/archives/C06QXPC7064)
@@ -45,7 +45,7 @@ For information about supported Kotlin targets, see the corresponding module REA
 
 ```kotlin
 dependencies {
-    implementation("io.github.jan-tennert.supabase:[module]:VERSION")
+    implementation("io.supabase:[module]:VERSION")
 }
 ```
 
@@ -55,8 +55,8 @@ If you use multiple modules, you can use the bom dependency to get the correct v
 modules:
 
 ```kotlin
-implementation(platform("io.github.jan-tennert.supabase:bom:VERSION"))
-implementation("io.github.jan-tennert.supabase:[module]")
+implementation(platform("io.supabase:bom:VERSION"))
+implementation("io.supabase:[module]")
 ```
 
 *Note that the minimum Android SDK version is 26. For lower versions, you need to enable [core library desugaring](https://developer.android.com/studio/write/java8-support#library-desugaring).*
