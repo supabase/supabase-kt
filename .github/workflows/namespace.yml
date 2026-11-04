@@ -1,0 +1,30 @@
+name: Check for the legacy namespace
+
+on:
+  pull_request:
+    branches:
+      - '*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      # Since 4.0.0 the SDK is published as `io.supabase` and uses the `io.supabase` package.
+      # References to the 3.x group/package are only allowed where they are intentional.
+      # TODO(SDK-2321): drop the libs.versions.toml, sample, demos and plugins exclusions once they are migrated.
+      - name: Check for io.github.jan(-tennert).supabase references
+        run: |
+          if git grep -nE 'io\.github\.jan(-tennert)?\.supabase' -- . \
+            ':!CHANGELOG.md' ':!MIGRATION.md' ':!refactor.MD' ':!GoTrue/README.md' ':!.github/workflows/namespace.yml' \
+            ':!buildSrc/src/main/kotlin/Publishing.kt' ':!**/LegacyNamespace*Test.kt' \
+            ':!gradle/libs.versions.toml' ':!sample' ':!demos' ':!plugins'; then
+            echo "::error::Found references to the legacy namespace. Use io.supabase instead."
+            exit 1
+          fi
