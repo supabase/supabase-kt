@@ -5,8 +5,10 @@ import io.github.jan.supabase.realtime.RealtimeProtocolVersion
 import io.github.jan.supabase.realtime.websocket.RealtimeWebsocket
 import io.github.jan.supabase.realtime.websocket.RealtimeWebsocketFactory
 import io.ktor.websocket.Frame
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.channels.Channel
+import kotlin.concurrent.Volatile
 import kotlin.concurrent.atomics.AtomicBoolean
 
 /**
@@ -14,8 +16,19 @@ import kotlin.concurrent.atomics.AtomicBoolean
  */
 class ScriptedWebsocketFactory : RealtimeWebsocketFactory {
     val created = mutableListOf<ScriptedWebsocket>()
+    /** Whether connecting fails, as it does while the device is offline. */
+    @Volatile var connectionFails = false
+    /** If set, connecting takes until this completes. */
+    @Volatile var connectionGate: CompletableDeferred<Unit>? = null
+    @Volatile var connectionAttempts = 0
+        private set
 
-    override suspend fun create(url: String): RealtimeWebsocket = ScriptedWebsocket().also { created += it }
+    override suspend fun create(url: String): RealtimeWebsocket {
+        connectionAttempts++
+        connectionGate?.await()
+        check(!connectionFails) { "Connection failed" }
+        return ScriptedWebsocket().also { created += it }
+    }
 }
 
 /**

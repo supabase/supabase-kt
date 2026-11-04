@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -46,9 +47,12 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 import kotlin.reflect.KClass
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 internal class RealtimeChannelImpl(
     override val realtime: Realtime,
@@ -56,6 +60,7 @@ internal class RealtimeChannelImpl(
     private val broadcastJoinConfig: BroadcastJoinConfig,
     private val presenceJoinConfig: PresenceJoinConfig,
     private val isPrivate: Boolean,
+    private val postgresChangesOptions: PostgresChangesOptions? = null,
 ) : RealtimeChannel {
 
     override val logger: SupabaseLogger = realtime.logger.appendTag(" [$topic$]")
@@ -72,9 +77,12 @@ internal class RealtimeChannelImpl(
     private val httpClient = realtimeImpl.supabaseClient.httpClient
     private val userPresenceEnabled = presenceJoinConfig.enabled
 
-    internal val joinAttempt = AtomicInt(0)
+    private val joinAttempt = AtomicInt(0)
     private val joinRef = AtomicReference<String?>(null)
     private val rejoinJob = AtomicReference<Job?>(null)
+    private val joinTimeoutJob = AtomicReference<Job?>(null)
+    // Why the channel stopped trying to join (it gave up or was closed), which ends a blocking subscribe()
+    private val joinEnded = MutableStateFlow<JoinEnded?>(null)
 
     private suspend fun accessToken() = realtimeImpl.config.accessToken(supabaseClient) ?: realtimeImpl.accessToken
 
@@ -88,19 +96,26 @@ internal class RealtimeChannelImpl(
 
     override suspend fun subscribe(blockUntilSubscribed: Boolean) {
         cancelRejoin()
+        joinAttempt.store(0)
+        joinEnded.value = null
         join(blockUntilSubscribed)
     }
 
     @OptIn(SupabaseInternal::class)
     private suspend fun join(blockUntilSubscribed: Boolean) {
-        if(realtimeImpl.status.value != Realtime.Status.CONNECTED) {
-            if(!realtimeImpl.config.connectOnSubscribe) error("You can't subscribe to a channel while the realtime client is not connected. Did you forget to call `realtime.connect()`?")
-            realtimeImpl.connect()
-            // If connect fails, it will schedule a retry, wait for the connection
-            realtimeImpl.status.first { it == Realtime.Status.CONNECTED }
-        }
+        val connected = realtimeImpl.status.value == Realtime.Status.CONNECTED
+        if(!connected && !realtimeImpl.config.connectOnSubscribe) error("You can't subscribe to a channel while the realtime client is not connected. Did you forget to call `realtime.connect()`?")
+        // Before connecting, so that disconnect() can end the join
         if(!realtimeImpl.subscriptions.containsKey(topic)) {
             realtime.addChannel(this)
+        }
+        if(!connected) {
+            realtimeImpl.connect()
+            // If connect fails, it will schedule a retry, wait for the connection
+            awaitConnection()?.let {
+                if(blockUntilSubscribed) throw RealtimeChannelJoinException(it.message, it.error)
+                return
+            }
         }
         val initialWebsocket = realtime.websocket
         if(checkWebsocket(initialWebsocket, "Not connected to websocket while trying to subscribe")) return
@@ -120,7 +135,7 @@ internal class RealtimeChannelImpl(
         }
         val postgrestChanges = clientChanges.toList()
         presenceJoinConfig.enabled = shouldEnablePresence()
-        val joinConfig = RealtimeJoinPayload(RealtimeJoinConfig(broadcastJoinConfig, presenceJoinConfig, postgrestChanges, isPrivate))
+        val joinConfig = RealtimeJoinPayload(RealtimeJoinConfig(broadcastJoinConfig, presenceJoinConfig, postgrestChanges, isPrivate, postgresChangesOptions))
         val joinConfigObject = buildJsonObject {
             putJsonObject(Json.encodeToJsonElement(joinConfig).jsonObject)
             currentJwt?.let {
@@ -133,10 +148,24 @@ internal class RealtimeChannelImpl(
         realtimeImpl.send(
             RealtimeMessage(topic, RealtimeChannel.CHANNEL_EVENT_JOIN, joinConfigObject, websocket.makeRef(), joinRef.load())
         )
+        startJoinTimeout()
         if(blockUntilSubscribed) {
-            status.first { it == RealtimeChannel.Status.SUBSCRIBED }
+            // Both are state, so an outcome that comes before this starts waiting isn't missed
+            combine(status, joinEnded) { status, ended ->
+                when {
+                    status == RealtimeChannel.Status.SUBSCRIBED -> true
+                    ended != null -> throw RealtimeChannelJoinException(ended.message, ended.error)
+                    else -> false
+                }
+            }.first { it }
         }
     }
+
+    // Null once connected, or why the channel stopped trying to join before that
+    private suspend fun awaitConnection(): JoinEnded? =
+        combine(realtimeImpl.status, joinEnded) { status, ended -> (status == Realtime.Status.CONNECTED) to ended }
+            .first { (connected, ended) -> connected || ended != null }
+            .second
 
     @OptIn(ExperimentalContracts::class)
     private fun checkWebsocket(websocket: RealtimeWebsocket?, message: String): Boolean {
@@ -218,6 +247,8 @@ internal class RealtimeChannelImpl(
     }
 
     override fun scheduleRejoin() {
+        // The join failed, so it can't also time out
+        cancelJoinTimeout()
         logger.d { "Rejoining channel $topic in ${realtime.config.rejoinDelay}" }
         val job = realtimeImpl.scope.launch(start = CoroutineStart.LAZY) {
             delay(realtime.config.rejoinDelay)
@@ -231,7 +262,48 @@ internal class RealtimeChannelImpl(
         rejoinJob.exchange(null)?.cancel()
     }
 
+    // Reports the error, then rejoins until maxAttempts is reached
+    internal fun rejoinAfter(error: RealtimeChannelError) {
+        callbackManager.triggerError(error)
+        val currentAttempt = joinAttempt.incrementAndFetch()
+        if(currentAttempt >= realtime.config.maxAttempts) {
+            logger.e { "Failed to rejoin channel $topic after $currentAttempt attempts. Giving up." }
+            endJoin("Failed to join channel $topic after $currentAttempt attempts: ${error.reason ?: error.type}", error)
+            updateStatus(RealtimeChannel.Status.UNSUBSCRIBED)
+            return
+        }
+        scheduleRejoin()
+    }
+
+    internal fun endJoin(message: String, error: RealtimeChannelError?) {
+        joinEnded.value = JoinEnded(message, error)
+    }
+
+    private fun startJoinTimeout() {
+        val timeout = joinTimeout()
+        val job = realtimeImpl.scope.launch(start = CoroutineStart.LAZY) {
+            delay(timeout)
+            if(status.value != RealtimeChannel.Status.SUBSCRIBING) return@launch
+            logger.e { "No reply to the join of channel $topic within $timeout" }
+            rejoinAfter(RealtimeChannelError(RealtimeChannelError.Type.TIMED_OUT, null, null))
+        }
+        joinTimeoutJob.exchange(job)?.cancel()
+        job.start()
+    }
+
+    private fun cancelJoinTimeout() {
+        joinTimeoutJob.exchange(null)?.cancel()
+    }
+
+    internal fun joinTimeout(): Duration {
+        val options = postgresChangesOptions
+        if(options?.wait != true || clientChanges.isEmpty()) return realtime.config.timeout
+        // Like realtime-js: outlast the server holding the join until the postgres changes subscription is set up
+        return maxOf(realtime.config.timeout, (options.timeout ?: POSTGRES_CHANGES_WAIT_TIMEOUT) + POSTGRES_CHANGES_WAIT_ERROR_GRACE)
+    }
+
     override suspend fun unsubscribe() {
+        endJoin("Channel $topic was unsubscribed", null)
         updateStatus(RealtimeChannel.Status.UNSUBSCRIBING)
         logger.d { "Unsubscribing from channel $topic" }
         val websocket = realtime.websocket
@@ -366,6 +438,13 @@ internal class RealtimeChannelImpl(
         awaitClose { callbackManager.removeCallbackById(id) }
     }
 
+    override fun errorFlow(): Flow<RealtimeChannelError> = callbackFlow {
+        val id = callbackManager.addErrorCallback {
+            trySend(it)
+        }
+        awaitClose { callbackManager.removeCallbackById(id) }
+    }
+
   /*  override fun <T : Any> RealtimeChannel.broadcastFlowInternal(type: KType, event: String): Flow<T> = callbackFlow {
         val id = callbackManager.addBroadcastCallback(event) {
             val decodedValue = try {
@@ -398,8 +477,16 @@ internal class RealtimeChannelImpl(
 
     override fun updateStatus(status: RealtimeChannel.Status) {
         when(status) {
-            RealtimeChannel.Status.SUBSCRIBED -> joinAttempt.store(0)
-            RealtimeChannel.Status.UNSUBSCRIBING, RealtimeChannel.Status.UNSUBSCRIBED -> cancelRejoin()
+            RealtimeChannel.Status.SUBSCRIBED -> {
+                // A late answer to a join that's being retried. A joined channel still rejoins after a channel error.
+                if(_status.value == RealtimeChannel.Status.SUBSCRIBING) cancelRejoin()
+                joinAttempt.store(0)
+                cancelJoinTimeout()
+            }
+            RealtimeChannel.Status.UNSUBSCRIBING, RealtimeChannel.Status.UNSUBSCRIBED -> {
+                cancelRejoin()
+                cancelJoinTimeout()
+            }
             RealtimeChannel.Status.SUBSCRIBING -> Unit
         }
         _status.value = status
@@ -407,6 +494,16 @@ internal class RealtimeChannelImpl(
 
     private suspend fun resubscribe() {
         join(blockUntilSubscribed = false)
+    }
+
+    // Not the exception itself, so each blocking subscribe() throws one with its own stack trace
+    private data class JoinEnded(val message: String, val error: RealtimeChannelError?)
+
+    private companion object {
+        // The Realtime server's default for postgres_changes_options.timeout
+        val POSTGRES_CHANGES_WAIT_TIMEOUT = 15.seconds
+        // The time the server takes to reject the join after waiting, like realtime-js's POSTGRES_CHANGES_WAIT_ERROR_GRACE
+        val POSTGRES_CHANGES_WAIT_ERROR_GRACE = 10.seconds
     }
 
 }
