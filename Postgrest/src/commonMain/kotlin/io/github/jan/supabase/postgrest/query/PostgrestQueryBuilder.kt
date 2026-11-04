@@ -7,6 +7,7 @@ import io.github.jan.supabase.exceptions.HttpRequestException
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.exception.PostgrestRestException
 import io.github.jan.supabase.postgrest.executor.RestRequestExecutor
+import io.github.jan.supabase.postgrest.query.filter.quoteValue
 import io.github.jan.supabase.postgrest.query.request.DeleteRequestBuilder
 import io.github.jan.supabase.postgrest.query.request.InsertRequestBuilder
 import io.github.jan.supabase.postgrest.query.request.SelectRequestBuilder
@@ -72,7 +73,7 @@ class PostgrestQueryBuilder(
             this.body = body
             request()
             val columns = body.flatMap { it.jsonObject.keys }.distinct()
-            if(columns.isNotEmpty()) params["columns"] = listOf(columns.joinToString(",") { "\"$it\"" })
+            if(columns.isNotEmpty()) params["columns"] = listOf(columns.joinToString(",") { quoteValue(it) })
         }
         return RestRequestExecutor.execute(postgrest = postgrest, path = table, request = requestBuilder)
     }
@@ -137,7 +138,7 @@ class PostgrestQueryBuilder(
             this.body = body
             request()
             val columns = body.flatMap { it.jsonObject.keys }.distinct()
-            if(columns.isNotEmpty()) params["columns"] = listOf(columns.joinToString(",") { "\"$it\"" })
+            if(columns.isNotEmpty()) params["columns"] = listOf(columns.joinToString(",") { quoteValue(it) })
         }
         return RestRequestExecutor.execute(postgrest = postgrest, path = table, request = requestBuilder)
     }
