@@ -381,7 +381,7 @@ import kotlin.time.Duration
             _websocket.load()?.send(message, config.vsn)
         } catch(e: Exception) {
             currentCoroutineContext().ensureActive()
-            logger.w(e) { "Error while sending message $message. Reconnecting in ${config.reconnectDelay}" }
+            logger.w(e) { "Error while sending ${message.event} to ${message.topic}. Reconnecting in ${config.reconnectDelay}" }
             reconnect()
         }
     }
