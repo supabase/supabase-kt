@@ -1,5 +1,5 @@
-import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.auth.status.SessionStatus
+import io.supabase.auth.Auth
+import io.supabase.auth.status.SessionStatus
 
 fun Auth.sessionSource() = (sessionStatus.value as SessionStatus.Authenticated).source
 

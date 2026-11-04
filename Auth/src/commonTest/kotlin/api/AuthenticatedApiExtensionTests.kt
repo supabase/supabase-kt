@@ -1,13 +1,13 @@
 package api
 
-import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.SupabaseClientBuilder
-import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.auth.api.authenticatedSupabaseApi
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.auth.minimalConfig
-import io.github.jan.supabase.auth.user.UserSession
-import io.github.jan.supabase.testing.createMockedSupabaseClient
+import io.supabase.SupabaseClient
+import io.supabase.SupabaseClientBuilder
+import io.supabase.auth.Auth
+import io.supabase.auth.api.authenticatedSupabaseApi
+import io.supabase.auth.auth
+import io.supabase.auth.minimalConfig
+import io.supabase.auth.user.UserSession
+import io.supabase.testing.createMockedSupabaseClient
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.header
 import kotlinx.coroutines.test.runTest

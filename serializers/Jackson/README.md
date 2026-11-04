@@ -6,6 +6,6 @@
 
 ```kotlin
 dependencies {
-    implementation("io.github.jan-tennert.supabase:serializer-jackson:VERSION")
+    implementation("io.supabase:serializer-jackson:VERSION")
 }
 ```

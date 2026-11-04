@@ -1,6 +1,6 @@
 package vectors.index
 
-import io.github.jan.supabase.storage.vectors.index.VectorDataType
+import io.supabase.storage.vectors.index.VectorDataType
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals

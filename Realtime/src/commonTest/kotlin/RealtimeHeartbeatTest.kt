@@ -1,9 +1,9 @@
 import app.cash.turbine.test
-import io.github.jan.supabase.realtime.Realtime
-import io.github.jan.supabase.realtime.RealtimeChannel
-import io.github.jan.supabase.realtime.RealtimeMessage
-import io.github.jan.supabase.realtime.channel
-import io.github.jan.supabase.realtime.realtime
+import io.supabase.realtime.Realtime
+import io.supabase.realtime.RealtimeChannel
+import io.supabase.realtime.RealtimeMessage
+import io.supabase.realtime.channel
+import io.supabase.realtime.realtime
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject

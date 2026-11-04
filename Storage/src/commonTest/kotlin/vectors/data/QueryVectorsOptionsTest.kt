@@ -1,7 +1,7 @@
 package vectors.data
 
-import io.github.jan.supabase.storage.vectors.data.QueryVectorsOptions
-import io.github.jan.supabase.storage.vectors.data.VectorData
+import io.supabase.storage.vectors.data.QueryVectorsOptions
+import io.supabase.storage.vectors.data.VectorData
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject

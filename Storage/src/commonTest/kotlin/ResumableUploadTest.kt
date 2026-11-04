@@ -1,7 +1,7 @@
-import io.github.jan.supabase.storage.Storage
-import io.github.jan.supabase.storage.resumable.MemoryResumableCache
-import io.github.jan.supabase.storage.storage
-import io.github.jan.supabase.testing.createMockedSupabaseClient
+import io.supabase.storage.Storage
+import io.supabase.storage.resumable.MemoryResumableCache
+import io.supabase.storage.storage
+import io.supabase.testing.createMockedSupabaseClient
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.respondError
 import io.ktor.http.HttpHeaders
