@@ -207,6 +207,7 @@ internal class BucketApiImpl(
         return api.rawRequest {
             prepareDownloadRequest(path, public, downloadOptions)
             downloadOptions.httpRequestOverrides.forEach { it() }
+            transferTimeouts(storage.config)
         }.body()
     }
 
@@ -237,6 +238,7 @@ internal class BucketApiImpl(
         api.prepareRequest {
             prepareDownloadRequest(path, public, downloadOptions)
             downloadOptions.httpRequestOverrides.forEach { it() }
+            transferTimeouts(storage.config)
         }.execute {
             if (!it.status.isSuccess()) throw storage.parseErrorResponse(it)
             it.bodyAsChannel().copyTo(channel)
@@ -310,6 +312,7 @@ internal class BucketApiImpl(
             this.method = method
             defaultUploadRequest(path, data, optionBuilder)
             optionBuilder.httpRequestOverrides.forEach { it() }
+            transferTimeouts(storage.config)
         }.safeBody<JsonObject>()
         val key = response["Key"]?.jsonPrimitive?.content
             ?: error("Expected a key in a upload response")
