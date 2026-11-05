@@ -6,6 +6,7 @@ import io.github.jan.supabase.auth.FlowType
 import io.github.jan.supabase.compose.auth.ComposeAuth
 import io.github.jan.supabase.compose.auth.googleNativeLogin
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.logging.LogLevel
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.realtime.Realtime
@@ -25,6 +26,7 @@ val supabaseModule = module {
                 platformGoTrueConfig()
                 flowType = FlowType.PKCE
             }
+            install(Functions)
             install(Realtime)
             install(ComposeAuth) {
                 googleNativeLogin(serverClientId = "YOUR_WEB_CLIENT_ID")
