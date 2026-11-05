@@ -7,6 +7,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.event.AuthEvent
 import io.github.jan.supabase.auth.minimalConfig
 import io.github.jan.supabase.auth.providers.Github
+import io.github.jan.supabase.auth.resetSessionStatusForBackground
 import io.github.jan.supabase.auth.status.RefreshFailureCause
 import io.github.jan.supabase.auth.status.SessionSource
 import io.github.jan.supabase.auth.status.SessionStatus
@@ -102,6 +103,35 @@ class AuthTest {
             assertIs<SessionStatus.Authenticated>(client.auth.sessionStatus.value)
             assertEquals(session, sessionManager.loadSessionOrNull())
         }
+    }
+
+    @Test
+    fun testBackgroundKeepsAuthenticatedStatusWhenResetDisabled() = runTest {
+        client = createMockedSupabaseClient(configuration = {
+            install(Auth) {
+                minimalConfig()
+                resetStatusOnBackground = false
+            }
+        })
+        client.auth.awaitInitialization()
+        client.auth.importSession(userSession())
+        assertIs<SessionStatus.Authenticated>(client.auth.sessionStatus.value)
+        client.auth.resetSessionStatusForBackground()
+        assertIs<SessionStatus.Authenticated>(client.auth.sessionStatus.value)
+    }
+
+    @Test
+    fun testBackgroundResetsStatusToInitializingByDefault() = runTest {
+        client = createMockedSupabaseClient(configuration = {
+            install(Auth) {
+                minimalConfig()
+            }
+        })
+        client.auth.awaitInitialization()
+        client.auth.importSession(userSession())
+        assertIs<SessionStatus.Authenticated>(client.auth.sessionStatus.value)
+        client.auth.resetSessionStatusForBackground()
+        assertIs<SessionStatus.Initializing>(client.auth.sessionStatus.value)
     }
 
     @Test
