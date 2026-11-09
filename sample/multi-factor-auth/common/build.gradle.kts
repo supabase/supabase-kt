@@ -16,7 +16,7 @@ version = "1.0-SNAPSHOT"
 @OptIn(ExperimentalKotlinGradlePluginApi::class)
 kotlin {
     jvmToolchain(11)
-    configuredAndroidTarget()
+    configuredAndroidTarget(JvmTarget.JVM_11)
     jvm("desktop") {
         compilerOptions {
             jvmTarget = JvmTarget.JVM_11
