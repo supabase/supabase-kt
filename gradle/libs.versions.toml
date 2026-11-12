@@ -32,7 +32,7 @@ kotlinx-browser = "0.5.0"
 immutable-collections = "0.5.2"
 crypto = "0.6.0"
 jwt-kt = "1.2.1"
-supabase-kt-plugins = "3.8.0" # https://github.com/supabase-community/supabase-kt-plugins
+supabase-kt-plugins = "3.9.0" # https://github.com/supabase-community/supabase-kt-plugins
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
