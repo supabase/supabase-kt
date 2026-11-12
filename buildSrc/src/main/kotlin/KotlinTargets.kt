@@ -15,6 +15,7 @@ fun KotlinMultiplatformExtension.iosTargets() {
 
 fun KotlinMultiplatformExtension.watchosTargets() {
     watchosArm64()
+    watchosDeviceArm64()
     watchosX64()
     watchosSimulatorArm64()
 }
