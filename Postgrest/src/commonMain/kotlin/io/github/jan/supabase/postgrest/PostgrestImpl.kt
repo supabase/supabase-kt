@@ -71,7 +71,8 @@ internal class PostgrestImpl(override val supabaseClient: SupabaseClient, overri
             this.body = body
             request()
             if(method != RpcMethod.POST && body != null) {
-                params.putAll(body.mapValues { listOf(it.value.toRpcParameter()) })
+                // Query parameters are always text, so NULL can't be expressed and would arrive as the string "null"
+                params.putAll(body.filterValues { it !is JsonNull }.mapValues { listOf(it.value.toRpcParameter()) })
             }
         }
         return RestRequestExecutor.execute(postgrest = this, path = "rpc/$function", request = requestBuilder)

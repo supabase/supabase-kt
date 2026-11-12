@@ -387,6 +387,27 @@ class PostgrestRequestBuilderTest {
         )
     }
 
+    @Test
+    fun testRepeatedLogicalFilters() {
+        testRequestBuilder(
+            requestBuilder = {
+                filter {
+                    or { eq("id", 1) }
+                    or { eq("id", 2) }
+                }
+                filter {
+                    or { eq("id", 3) }
+                    or(negate = true, referencedTable = "table") { eq("id", 4) }
+                    or(negate = true, referencedTable = "table") { eq("id", 5) }
+                }
+            },
+            httpRequestHandler = {
+                assertEquals(listOf("(id.eq.1)", "(id.eq.2)", "(id.eq.3)"), url.parameters.getAll("or"))
+                assertEquals(listOf("(id.eq.4)", "(id.eq.5)"), url.parameters.getAll("not.table.or"))
+            }
+        )
+    }
+
     private fun testRequestBuilder(
         schema: String = "public",
         requestBuilder: MockPostgrestRequestBuilder.() -> Unit,
