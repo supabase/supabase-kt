@@ -31,4 +31,9 @@ sealed interface RealtimeCallback <T> {
         override val id: Int
     ): RealtimeCallback<RealtimeSystemPayload>
 
+    class ErrorCallback(
+        override val callback: (RealtimeChannelError) -> Unit,
+        override val id: Int
+    ): RealtimeCallback<RealtimeChannelError>
+
 }

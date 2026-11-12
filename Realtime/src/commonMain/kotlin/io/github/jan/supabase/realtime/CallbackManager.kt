@@ -25,6 +25,8 @@ sealed class RealtimeCallbackId(val value: Int) {
 
     class System(value: Int) : RealtimeCallbackId(value)
 
+    class Error(value: Int) : RealtimeCallbackId(value)
+
 }
 
 @SupabaseInternal
@@ -38,6 +40,8 @@ interface CallbackManager {
 
     fun triggerSystem(data: RealtimeSystemPayload)
 
+    fun triggerError(error: RealtimeChannelError)
+
     fun hasPresenceCallback(): Boolean
 
     /**
@@ -48,6 +52,8 @@ interface CallbackManager {
     fun addBroadcastCallback(event: String, callback: (RealtimeBroadcast) -> Unit): RealtimeCallbackId.Broadcast
 
     fun addSystemCallback(callback: (RealtimeSystemPayload) -> Unit): RealtimeCallbackId.System
+
+    fun addErrorCallback(callback: (RealtimeChannelError) -> Unit): RealtimeCallbackId.Error
 
     fun addPostgresCallback(filter: PostgresJoinConfig, callback: (PostgresAction) -> Unit): RealtimeCallbackId.Postgres
 
@@ -63,6 +69,7 @@ interface CallbackManager {
 
 private typealias BroadcastMap = PersistentMap<String, PersistentList<RealtimeCallback.BroadcastCallback>>
 private typealias SystemMap = PersistentMap<Int, RealtimeCallback.SystemCallback>
+private typealias ErrorMap = PersistentMap<Int, RealtimeCallback.ErrorCallback>
 private typealias PresenceMap = PersistentMap<Int, RealtimeCallback.PresenceCallback>
 private typealias PostgresMap = PersistentMap<Int, RealtimeCallback.PostgresCallback>
 
@@ -85,6 +92,8 @@ internal class CallbackManagerImpl(
 
     private val systemCallbacks = AtomicReference<SystemMap>(persistentHashMapOf())
 
+    private val errorCallbacks = AtomicReference<ErrorMap>(persistentHashMapOf())
+
     override fun reset() {
         postgresCallbacks.store(persistentHashMapOf())
         broadcastEventId.store(persistentHashMapOf())
@@ -92,6 +101,7 @@ internal class CallbackManagerImpl(
         presenceCallbacks.store(persistentHashMapOf())
         currentPresenceState.store(persistentHashMapOf())
         systemCallbacks.store(persistentHashMapOf())
+        errorCallbacks.store(persistentHashMapOf())
         _serverChanges.store(emptyList())
         nextId.store(0)
     }
@@ -126,6 +136,18 @@ internal class CallbackManagerImpl(
 
     override fun triggerSystem(data: RealtimeSystemPayload) {
         systemCallbacks.load().values.forEach { it.callback(data) }
+    }
+
+    override fun addErrorCallback(callback: (RealtimeChannelError) -> Unit): RealtimeCallbackId.Error {
+        val id = nextId.fetchAndIncrement()
+        errorCallbacks.update {
+            it.putting(id, RealtimeCallback.ErrorCallback(callback, id))
+        }
+        return RealtimeCallbackId.Error(id)
+    }
+
+    override fun triggerError(error: RealtimeChannelError) {
+        errorCallbacks.load().values.forEach { it.callback(error) }
     }
 
     override fun triggerPostgresChange(ids: List<Int>, data: PostgresAction) {
@@ -191,12 +213,19 @@ internal class CallbackManagerImpl(
         }
     }
 
+    fun removeErrorCallbackById(id: Int) {
+        errorCallbacks.update {
+            it.removing(id)
+        }
+    }
+
     override fun removeCallbackById(id: RealtimeCallbackId) {
         when (id) {
             is RealtimeCallbackId.Broadcast -> removeBroadcastCallbackById(id.value)
             is RealtimeCallbackId.Presence -> removePresenceCallbackById(id.value)
             is RealtimeCallbackId.Postgres -> removePostgresCallbackById(id.value)
             is RealtimeCallbackId.System -> removeSystemCallbackById(id.value)
+            is RealtimeCallbackId.Error -> removeErrorCallbackById(id.value)
         }
     }
 
