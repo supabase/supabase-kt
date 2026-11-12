@@ -8,7 +8,6 @@ import io.github.jan.supabase.storage.ImageTransformation
 import io.github.jan.supabase.storage.SortOrder
 import io.github.jan.supabase.storage.StorageRestException
 import io.github.jan.supabase.storage.Storage
-import io.github.jan.supabase.storage.StorageRestException
 import io.github.jan.supabase.storage.resumable.MemoryResumableCache
 import io.github.jan.supabase.storage.storage
 import io.github.jan.supabase.testing.assertMethodIs
@@ -49,7 +48,6 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
-import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -697,13 +695,6 @@ class BucketApiTest {
             assertEquals(file.copy(serializer = client.storage.serializer), data, "Data should be $file")
         }
     }
-
-    private fun errorBody(statusCode: Int, error: String, message: String, code: String?) = buildJsonObject {
-        put("statusCode", statusCode.toString())
-        put("error", error)
-        put("message", message)
-        if (code != null) put("code", code)
-    }.toString()
 
     @Test
     fun testExistsWithExistingFile() = runTest {
