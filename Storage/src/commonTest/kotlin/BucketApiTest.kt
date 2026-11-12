@@ -6,6 +6,7 @@ import io.github.jan.supabase.storage.FileObjectV2
 import io.github.jan.supabase.storage.FileUploadResponse
 import io.github.jan.supabase.storage.ImageTransformation
 import io.github.jan.supabase.storage.SortOrder
+import io.github.jan.supabase.storage.StorageRestException
 import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.resumable.MemoryResumableCache
 import io.github.jan.supabase.storage.storage
@@ -45,6 +46,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
@@ -695,33 +697,56 @@ class BucketApiTest {
     }
 
     @Test
-    fun testExistsWithExistingFile() {
-        runTest {
-            val expectedPath = "data.png"
+    fun testExistsWithExistingFile() = runTest {
+        val file = FileObjectV2(
+            "data.png", "id", "version", createdAt = Clock.System.now(),
+            metadata = null, size = 0, rawContentType = "image/png",
+            etag = null, lastModified = null, cacheControl = null
+        )
+        client = createMockedSupabaseClient(configuration = configureClient) {
+            assertMethodIs(HttpMethod.Get, it.method)
+            assertPathIs("/object/info/$bucketId/data.png", it.url.pathAfterVersion())
+            respond(Json.encodeToString(file), headers = headersOf(HttpHeaders.ContentType, "application/json"))
+        }
+        assertTrue(client.storage[bucketId].exists("data.png"))
+    }
+
+    @Test
+    fun testExistsWithNonExistingFile() = runTest {
+        for (body in listOf(
+            """{"statusCode":404,"error":"Not Found","message":"Missing","code":"NoSuchKey"}""",
+            """{"statusCode":404,"error":"","message":"Missing"}""",
+            ""
+        )) {
             client = createMockedSupabaseClient(configuration = configureClient) {
-                assertMethodIs(HttpMethod.Head, it.method)
-                assertPathIs("/object/$bucketId/$expectedPath", it.url.pathAfterVersion())
-                respondOk()
+                assertMethodIs(HttpMethod.Get, it.method)
+                assertPathIs("/object/info/$bucketId/data.png", it.url.pathAfterVersion())
+                respond(body, HttpStatusCode.NotFound, headersOf(HttpHeaders.ContentType, "application/json"))
             }
-            val exists = client.storage[bucketId].exists(expectedPath)
-            assertTrue { exists }
+            assertFalse(client.storage[bucketId].exists("data.png"))
         }
     }
 
     @Test
-    fun testExistsWithNonExistingFile() {
-        val statusCodes = listOf(404, 400)
-        for(code in statusCodes) {
-            runTest {
-                val expectedPath = "data.png"
-                client = createMockedSupabaseClient(configuration = configureClient) {
-                    assertMethodIs(HttpMethod.Head, it.method)
-                    assertPathIs("/object/$bucketId/$expectedPath", it.url.pathAfterVersion())
-                    respondError(HttpStatusCode(code, "Not Found"))
-                }
-                val exists = client.storage[bucketId].exists(expectedPath)
-                assertFalse { exists }
+    fun testExistsPropagatesStorageErrors() = runTest {
+        for ((status, code) in listOf(
+            HttpStatusCode.BadRequest to "InvalidJWT",
+            HttpStatusCode.NotFound to "NoSuchBucket",
+            HttpStatusCode.Forbidden to "AccessDenied",
+            HttpStatusCode.InternalServerError to "InternalError"
+        )) {
+            client = createMockedSupabaseClient(configuration = configureClient) {
+                respond(
+                    """{"statusCode":${status.value},"error":"$code","message":"Failure","code":"$code"}""",
+                    status,
+                    headersOf(HttpHeaders.ContentType, "application/json")
+                )
             }
+            val exception = assertFailsWith<StorageRestException> {
+                client.storage[bucketId].exists("data.png")
+            }
+            assertEquals(code, exception.code)
+            assertEquals(status.value, exception.statusCode)
         }
     }
 
