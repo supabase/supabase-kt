@@ -46,6 +46,14 @@ class PostgrestResultTest {
     }
 
     @Test
+    fun testRangeOrNullEmptyResult() {
+        listOf("*/0", "*/*").forEach { contentRange ->
+            val result = PostgrestResult("[]", headersOf("Content-Range", contentRange), supabase.postgrest)
+            assertNull(result.rangeOrNull())
+        }
+    }
+
+    @Test
     fun testRangeOrNullMissingHeader() {
         val result = PostgrestResult("[]", Headers.Empty, supabase.postgrest)
         assertNull(result.rangeOrNull())
