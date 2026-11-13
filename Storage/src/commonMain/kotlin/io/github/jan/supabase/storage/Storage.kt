@@ -246,6 +246,8 @@ internal class StorageImpl(override val supabaseClient: SupabaseClient, override
         }
     })
 
+    private val resumableCache by lazy { config.resumable.cache ?: createDefaultResumableCache() }
+
     override val analytics: StorageAnalyticsClient = StorageAnalyticsClientImpl(api.resolve("iceberg"))
     override val vectors: StorageVectorsClient = StorageVectorsClientImpl(api.resolve("vector"))
 
@@ -306,7 +308,7 @@ internal class StorageImpl(override val supabaseClient: SupabaseClient, override
         api.post("bucket/${storagePath(bucketId)}/empty")
     }
 
-    override fun get(bucketId: String): BucketApi = BucketApiImpl(bucketId, this, api.resolve("object"), config.resumable.cache ?: createDefaultResumableCache())
+    override fun get(bucketId: String): BucketApi = BucketApiImpl(bucketId, this, api.resolve("object"), resumableCache)
 
     override suspend fun parseErrorResponse(response: HttpResponse): RestException {
         val statusCode = response.status
