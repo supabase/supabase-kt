@@ -1,6 +1,6 @@
-import io.github.jan.supabase.storage.resumable.Fingerprint
-import io.github.jan.supabase.storage.resumable.MemoryResumableCache
-import io.github.jan.supabase.storage.resumable.ResumableCacheEntry
+import io.supabase.storage.resumable.Fingerprint
+import io.supabase.storage.resumable.MemoryResumableCache
+import io.supabase.storage.resumable.ResumableCacheEntry
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

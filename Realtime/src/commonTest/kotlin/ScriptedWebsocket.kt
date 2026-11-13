@@ -1,9 +1,9 @@
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.Turbine
-import io.github.jan.supabase.realtime.RealtimeMessage
-import io.github.jan.supabase.realtime.RealtimeProtocolVersion
-import io.github.jan.supabase.realtime.websocket.RealtimeWebsocket
-import io.github.jan.supabase.realtime.websocket.RealtimeWebsocketFactory
+import io.supabase.realtime.RealtimeMessage
+import io.supabase.realtime.RealtimeProtocolVersion
+import io.supabase.realtime.websocket.RealtimeWebsocket
+import io.supabase.realtime.websocket.RealtimeWebsocketFactory
 import io.ktor.websocket.Frame
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.channels.Channel

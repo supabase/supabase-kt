@@ -44,7 +44,7 @@ kotlin {
                 api(compose.foundation)
                 api(compose.material3)
                 api(compose.materialIconsExtended)
-                addModules(SupabaseModule.STORAGE)
+                api(libs.supabase.released.storage)
                 api(libs.koin.core)
                 api(libs.filekit.core)
                 api(libs.filekit.compose)

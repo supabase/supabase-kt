@@ -34,7 +34,7 @@ repositories {
 ```
 And add the following to your dependencies:
 ```kotlin
-implementation("io.github.jan-tennert.supabase:[module]:customVersion")
+implementation("io.supabase:[module]:customVersion")
 ```
 ## Running Tests
 

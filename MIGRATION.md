@@ -1,3 +1,58 @@
+# Migrating from version 3.X to 4.0.0
+
+> [!NOTE]
+> 4.0.0 has not been released yet. The latest release is 3.9.0, which still uses the `io.github.jan-tennert.supabase` group and the `io.github.jan.supabase` package. This guide describes the upcoming change.
+
+### New Maven group and package name
+
+supabase-kt is becoming an official Supabase SDK. Starting with `4.0.0`, it is published under a new Maven group and uses a new package name:
+
+|                | 3.X                              | 4.0.0 and later |
+|----------------|----------------------------------|-----------------|
+| Maven group ID | `io.github.jan-tennert.supabase` | `io.supabase`   |
+| Package name   | `io.github.jan.supabase`         | `io.supabase`   |
+
+Artifact IDs are unchanged (`auth-kt`, `postgrest-kt`, `storage-kt`, `realtime-kt`, `functions-kt`, `supabase-kt`, `bom`, ...), and so are the package names below the root (e.g. `io.github.jan.supabase.auth.providers` is now `io.supabase.auth.providers`).
+
+**Sessions and other data stored on users' devices are not affected.** Sessions, PKCE code verifiers, and resumable upload state saved by 3.X are stored under the same keys and in the same format, and are picked up automatically by 4.0.0. Your users stay signed in after updating your app.
+
+#### How to migrate
+
+1. Replace the Maven group in your build files (`build.gradle.kts`, `libs.versions.toml`, ...). Upgrade **all** supabase-kt modules **and** plugins (e.g. `compose-auth`, `compose-auth-ui`, `coil3-integration`) to `4.0.0` at the same time.
+   ```kotlin
+   // Before
+   implementation(platform("io.github.jan-tennert.supabase:bom:3.9.0"))
+   implementation("io.github.jan-tennert.supabase:auth-kt")
+   // After
+   implementation(platform("io.supabase:bom:4.0.0"))
+   implementation("io.supabase:auth-kt")
+   ```
+2. Replace the group ID and the package name everywhere else in your project. In IntelliJ / Android Studio use *Edit > Find > Replace in Files*:
+   - `io.github.jan-tennert.supabase` → `io.supabase`
+   - `io.github.jan.supabase` → `io.supabase`
+
+   Or from the command line (macOS: use `sed -i ''`):
+   ```bash
+   grep -rlE 'io\.github\.jan(-tennert)?\.supabase' --include='*.kt' --include='*.kts' --include='*.gradle' --include='*.java' --include='*.toml' --include='*.properties' --include='*.xml' --include='*.pro' --include='*.txt' --include='*.swift' . \
+     | xargs sed -i -E -e 's/io\.github\.jan-tennert\.supabase/io.supabase/g' -e 's/io\.github\.jan\.supabase/io.supabase/g'
+   ```
+3. Search your project for `io.github.jan` once more. The following places are **not** checked by the compiler and stop working silently if they still use the old name:
+   - **ProGuard / R8 rules** (e.g. `-keep class io.github.jan.supabase.** { *; }`). The rules no longer match, which can cause crashes that only appear in minified release builds.
+   - **`AndroidManifest.xml` overrides** of the SDK's initializers (e.g. `tools:node="remove"` on `io.github.jan.supabase.auth.SupabaseInitializer` or `io.github.jan.supabase.storage.SupabaseInitializer`). They are now `io.supabase.auth.SupabaseInitializer` and `io.supabase.storage.SupabaseInitializer`.
+   - **Opt-in compiler arguments** in Gradle files (e.g. `optIn("io.github.jan.supabase.annotations.SupabaseExperimental")`).
+   - **Strings and reflection** that reference SDK classes by their full name.
+
+#### "Cannot select module because of conflict with ... Both provide capability 'io.github.jan-tennert.supabase:...'"
+
+4.0.0 declares that it replaces the corresponding 3.X module. If a dependency (for example, a plugin or third-party library you haven't upgraded yet) still pulls in a 3.X supabase-kt module, Gradle fails with a capability conflict instead of silently bundling two copies of the SDK. The two copies use different packages, so their types don't work with each other, and if both create a client they share and refresh the same stored session.
+
+This check relies on Gradle module metadata, so it only works in Gradle builds. Maven builds don't report the conflict.
+
+To fix it, upgrade that dependency to a version built on supabase-kt 4.0.0. You can find it with:
+```bash
+./gradlew :app:dependencies | grep io.github.jan-tennert.supabase
+```
+
 # Migrating from version 2.X to 3.0.0
 
 ### Ktor 3
