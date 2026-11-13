@@ -19,8 +19,8 @@ fun Auth.parseFragmentAndImportSession(fragment: String, onFinish: (UserSession?
     authScope.launch {
         val user = tryToGetUser(session.accessToken)
         val newSession = session.copy(user = user)
-        onFinish(newSession)
         importSession(newSession, source = SessionSource.External)
+        onFinish(newSession)
     }
 }
 
