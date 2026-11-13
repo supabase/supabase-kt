@@ -1,6 +1,6 @@
-import io.github.jan.supabase.storage.BucketSortColumn
-import io.github.jan.supabase.storage.SortOrder
-import io.github.jan.supabase.storage.StorageListFilter
+import io.supabase.storage.BucketSortColumn
+import io.supabase.storage.SortOrder
+import io.supabase.storage.StorageListFilter
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive

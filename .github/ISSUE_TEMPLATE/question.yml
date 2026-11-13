@@ -10,7 +10,7 @@ body:
       options:
         - label: I checked the issues and discussions for similar questions
           required: true
-        - label: I checked the [troubleshooting](https://github.com/supabase-community/supabase-kt/blob/master/TROUBLESHOOTING.md) page for similar problems
+        - label: I checked the [troubleshooting](https://github.com/supabase/supabase-kt/blob/master/TROUBLESHOOTING.md) page for similar problems
           required: true
   - type: textarea
     id: question

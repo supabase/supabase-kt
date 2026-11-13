@@ -1,7 +1,7 @@
 package api
 
-import io.github.jan.supabase.auth.api.ResolveAccessToken
-import io.github.jan.supabase.auth.api.buildAuthConfig
+import io.supabase.auth.api.ResolveAccessToken
+import io.supabase.auth.api.buildAuthConfig
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -5,8 +5,8 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 fun KotlinMultiplatformExtension.defaultConfig() {
     sourceSets.all {
         languageSettings.optIn("kotlin.RequiresOptIn")
-        languageSettings.optIn("io.github.jan.supabase.annotations.SupabaseInternal")
-        languageSettings.optIn("io.github.jan.supabase.annotations.SupabaseExperimental")
+        languageSettings.optIn("io.supabase.annotations.SupabaseInternal")
+        languageSettings.optIn("io.supabase.annotations.SupabaseExperimental")
         languageSettings.optIn("kotlin.time.ExperimentalTime")
         languageSettings.optIn("kotlin.concurrent.atomics.ExperimentalAtomicApi")
     }

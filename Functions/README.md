@@ -40,7 +40,7 @@ If you self-host the Supabase Edge Runtime, we recommend upgrading to the latest
 
 # Installation
 
-Newest version: [![](https://img.shields.io/github/release/supabase-community/supabase-kt?label=)](https://github.com/supabase-community/supabase-kt/releases)
+Newest version: [![](https://img.shields.io/github/release/supabase/supabase-kt?label=)](https://github.com/supabase/supabase-kt/releases)
 
 ```kotlin
 dependencies {

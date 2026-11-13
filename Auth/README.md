@@ -46,7 +46,7 @@ If you self-host Supabase Auth, we recommend upgrading to the latest release whe
 
 # Installation
 
-Newest version: [![](https://img.shields.io/github/release/supabase-community/supabase-kt?label=)](https://github.com/supabase-community/supabase-kt/releases)
+Newest version: [![](https://img.shields.io/github/release/supabase/supabase-kt?label=)](https://github.com/supabase/supabase-kt/releases)
 
 ```kotlin
 dependencies {
