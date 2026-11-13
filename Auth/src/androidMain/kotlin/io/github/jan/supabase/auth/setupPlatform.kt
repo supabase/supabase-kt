@@ -6,7 +6,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.startup.Initializer
 import io.github.jan.supabase.annotations.SupabaseInternal
-import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.logging.d
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -60,7 +59,7 @@ private fun addLifecycleCallbacks(auth: Auth) {
                         auth.logger.d { "Cancelling auto refresh because app is switching to the background" }
                         scope.launch {
                             auth.stopAutoRefreshForCurrentSession()
-                            auth.setSessionStatus(SessionStatus.Initializing)
+                            auth.resetSessionStatusForBackground()
                         }
                     }
                 }

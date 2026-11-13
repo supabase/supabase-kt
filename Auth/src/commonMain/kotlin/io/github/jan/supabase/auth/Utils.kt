@@ -24,6 +24,12 @@ internal fun Auth.initDone() {
     }
 }
 
+internal fun Auth.resetSessionStatusForBackground() {
+    if(config.resetStatusOnBackground) {
+        setSessionStatus(SessionStatus.Initializing)
+    }
+}
+
 internal suspend fun Auth.tryToGetUser(accessToken: String) = try {
     retrieveUser(accessToken)
 } catch (e: Exception) {
