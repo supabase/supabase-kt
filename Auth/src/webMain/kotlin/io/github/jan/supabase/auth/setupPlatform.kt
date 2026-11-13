@@ -1,5 +1,6 @@
 package io.github.jan.supabase.auth
 
+import io.github.jan.supabase.StringMasking
 import io.github.jan.supabase.annotations.SupabaseInternal
 import io.github.jan.supabase.auth.status.SessionSource
 import io.github.jan.supabase.auth.url.UrlValidationResult
@@ -27,7 +28,7 @@ private fun Auth.checkForHash(bridge: BrowserBridge): UserSession? {
     if(bridge.hash.isBlank()) return null
     val afterHash = bridge.hash.substring(1)
     if(!afterHash.contains('=')) return null
-    logger.d { "Found hash: $afterHash" }
+    logger.d { "Found hash: ${StringMasking.maskParameterString(afterHash)}" }
     return when(val result = validateHash(afterHash)) {
         is UrlValidationResult.SessionFound, UrlValidationResult.ErrorFound -> {
             cleanHash(bridge)
@@ -56,7 +57,7 @@ private fun Auth.checkForPKCECode(bridge: BrowserBridge): String? {
 }
 
 private suspend fun Auth.handlePKCECode(code: String) {
-    logger.d { "Found PCKE code: $code" }
+    logger.d { "Found PCKE code: ${StringMasking.maskString(code, showLength = true)}" }
     try {
         val session = exchangeCodeForSession(code)
         importSession(session, source = SessionSource.External)
