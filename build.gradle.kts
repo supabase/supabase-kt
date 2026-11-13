@@ -47,6 +47,7 @@ libraryModules {
     version = supabaseVersion
 
     applyPublishing()
+    declareLegacyCapabilities()
 }
 
 val reportMerge = tasks.register<io.gitlab.arturbosch.detekt.report.ReportMergeTask>("reportMerge") {

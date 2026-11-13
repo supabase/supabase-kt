@@ -1,5 +1,5 @@
-import io.github.jan.supabase.auth.MemorySessionManager
-import io.github.jan.supabase.auth.exception.NoSessionFoundException
+import io.supabase.auth.MemorySessionManager
+import io.supabase.auth.exception.NoSessionFoundException
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

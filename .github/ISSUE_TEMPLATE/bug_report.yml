@@ -16,7 +16,7 @@ body:
           required: true
         - label: I installed the latest version of supabase-kt
           required: true
-        - label: I checked the [troubleshooting](https://github.com/supabase-community/supabase-kt/blob/master/TROUBLESHOOTING.md) page for similar problems
+        - label: I checked the [troubleshooting](https://github.com/supabase/supabase-kt/blob/master/TROUBLESHOOTING.md) page for similar problems
           required: true
   - type: input
     id: version

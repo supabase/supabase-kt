@@ -1,5 +1,5 @@
-import io.github.jan.supabase.realtime.postgres.RealtimePostgresChangesFilterOperator
-import io.github.jan.supabase.realtime.postgres.RealtimePostgresFilterBuilder
+import io.supabase.realtime.postgres.RealtimePostgresChangesFilterOperator
+import io.supabase.realtime.postgres.RealtimePostgresFilterBuilder
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

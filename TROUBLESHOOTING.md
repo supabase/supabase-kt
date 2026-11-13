@@ -66,7 +66,7 @@ By default, if the App changes into background, the Auth plugin clears the sessi
 
 Note that this will generally disable the automatic session refresh and session loading, so you have to handle this yourself.
 
-[Here is the default implementation](https://github.com/supabase-community/supabase-kt/blob/2ac384478e714624bce1af9f26e019dd2f43a118/GoTrue/src/androidMain/kotlin/io/github/jan/supabase/gotrue/setupPlatform.kt#L29)
+[Here is the default implementation](https://github.com/supabase/supabase-kt/blob/2ac384478e714624bce1af9f26e019dd2f43a118/GoTrue/src/androidMain/kotlin/io/github/jan/supabase/gotrue/setupPlatform.kt#L29)
 
 </details>
 
@@ -152,4 +152,4 @@ so each `SupabaseClient` can keep its session under its own key.
 
 </details>
 
-**If your problem does not occur here, feel free to create an [issue](https://github.com/supabase-community/supabase-kt/issues/new/choose) or a [discussion](https://github.com/supabase-community/supabase-kt/discussions/new/choose).**
+**If your problem does not occur here, feel free to create an [issue](https://github.com/supabase/supabase-kt/issues/new/choose) or a [discussion](https://github.com/supabase/supabase-kt/discussions/new/choose).**

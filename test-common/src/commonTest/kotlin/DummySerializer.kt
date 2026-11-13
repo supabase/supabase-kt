@@ -1,4 +1,4 @@
-import io.github.jan.supabase.SupabaseSerializer
+import io.supabase.SupabaseSerializer
 import kotlin.reflect.KType
 
 class DummySerializer: SupabaseSerializer {

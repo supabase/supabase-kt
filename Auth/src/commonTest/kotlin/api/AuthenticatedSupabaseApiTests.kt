@@ -1,10 +1,10 @@
 package api
 
-import io.github.jan.supabase.auth.api.AuthenticatedSupabaseApi
-import io.github.jan.supabase.auth.api.ResolveAccessToken
-import io.github.jan.supabase.auth.api.buildAuthConfig
-import io.github.jan.supabase.auth.exception.SessionRequiredException
-import io.github.jan.supabase.testing.MockedHttpClient
+import io.supabase.auth.api.AuthenticatedSupabaseApi
+import io.supabase.auth.api.ResolveAccessToken
+import io.supabase.auth.api.buildAuthConfig
+import io.supabase.auth.exception.SessionRequiredException
+import io.supabase.testing.MockedHttpClient
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpMethod
 import kotlinx.coroutines.test.runTest

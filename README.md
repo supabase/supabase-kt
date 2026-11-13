@@ -13,8 +13,8 @@ For information about supported Kotlin targets, see the corresponding module REA
 
 *Note: The `WASM-JS` target for supported modules is only available for version 3.0.0 and above*
 
-[![](https://img.shields.io/github/release/supabase-community/supabase-kt?label=stable)](https://github.com/supabase-community/supabase-kt/releases) 
-[![](https://badgen.net/github/release/supabase-community/supabase-kt?label=prerelease)](https://central.sonatype.com/search?q=io.github.jan.supabase&smo=true) 
+[![](https://img.shields.io/github/release/supabase/supabase-kt?label=stable)](https://github.com/supabase/supabase-kt/releases) 
+[![](https://badgen.net/github/release/supabase/supabase-kt?label=prerelease)](https://central.sonatype.com/search?q=io.github.jan.supabase&smo=true) 
 [![Kotlin](https://img.shields.io/badge/kotlin-2.3.21-blue.svg?logo=kotlin)](http://kotlinlang.org) 
 [![Ktor](https://img.shields.io/badge/ktor-3.4.3-blue)](https://ktor.io/)
 [![slack](https://img.shields.io/badge/slack-%23supabase--kt-purple.svg?logo=slack)](https://kotlinlang.slack.com/archives/C06QXPC7064)
@@ -31,7 +31,7 @@ For information about supported Kotlin targets, see the corresponding module REA
 
 [Tutorial: Build a Product Management Android App with Jetpack Compose](https://supabase.com/docs/guides/getting-started/tutorials/with-kotlin)
 
-[Dokka documentation for the latest version](https://supabase-community.github.io/supabase-kt/)
+[Dokka documentation for the latest version](https://supabase.github.io/supabase-kt/)
 
 [Troubleshooting](/TROUBLESHOOTING)
 
@@ -179,8 +179,8 @@ If you self-host Supabase, we recommend upgrading your services to their latest 
 
 - Join the [#supabase-kt](https://kotlinlang.slack.com/archives/C06QXPC7064) Kotlin Slack channel
 - [Join the Supabase Discord](https://discord.supabase.com) and create a new post with the 'Kotlin' tag under `help-and-questions`
-- [Create a discussion](https://github.com/supabase-community/supabase-kt/discussions/new/choose)
-- [Create an issue](https://github.com/supabase-community/supabase-kt/issues/new/choose)
+- [Create a discussion](https://github.com/supabase/supabase-kt/discussions/new/choose)
+- [Create an issue](https://github.com/supabase/supabase-kt/issues/new/choose)
 
 # Guides
 

@@ -13,9 +13,9 @@ val buildConfigGenerator by tasks.registering(Sync::class) {
     from(
         resources.text.fromString(
             """
-        |package io.github.jan.supabase
+        |package io.supabase
         |
-        |import io.github.jan.supabase.annotations.SupabaseInternal
+        |import io.supabase.annotations.SupabaseInternal
         |
         |@SupabaseInternal
         |object BuildConfig {
@@ -26,7 +26,7 @@ val buildConfigGenerator by tasks.registering(Sync::class) {
         )
     ) {
         rename { "BuildConfig.kt" } // set the file name
-        into("io/github/jan/supabase/") // change the directory to match the package
+        into("io/supabase/") // change the directory to match the package
     }
 
     into(layout.buildDirectory.dir("generated-src/kotlin/"))

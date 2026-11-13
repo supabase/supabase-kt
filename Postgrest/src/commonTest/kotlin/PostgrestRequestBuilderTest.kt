@@ -1,8 +1,8 @@
-import io.github.jan.supabase.postgrest.query.AcceptHeader
-import io.github.jan.supabase.postgrest.query.Columns
-import io.github.jan.supabase.postgrest.query.Count
-import io.github.jan.supabase.postgrest.query.Order
-import io.github.jan.supabase.postgrest.query.PostgrestQueryBuilder
+import io.supabase.postgrest.query.AcceptHeader
+import io.supabase.postgrest.query.Columns
+import io.supabase.postgrest.query.Count
+import io.supabase.postgrest.query.Order
+import io.supabase.postgrest.query.PostgrestQueryBuilder
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders

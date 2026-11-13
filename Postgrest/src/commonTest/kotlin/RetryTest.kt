@@ -1,7 +1,7 @@
-import io.github.jan.supabase.SupabaseClientBuilder
-import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.testing.createMockedSupabaseClient
+import io.supabase.SupabaseClientBuilder
+import io.supabase.postgrest.Postgrest
+import io.supabase.postgrest.from
+import io.supabase.testing.createMockedSupabaseClient
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest

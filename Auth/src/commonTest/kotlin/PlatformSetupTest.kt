@@ -1,7 +1,7 @@
-import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.auth.minimalConfig
-import io.github.jan.supabase.testing.createMockedSupabaseClient
+import io.supabase.auth.Auth
+import io.supabase.auth.auth
+import io.supabase.auth.minimalConfig
+import io.supabase.testing.createMockedSupabaseClient
 
 internal suspend fun createMinimalAuthClient(
     autoSetup: Boolean,

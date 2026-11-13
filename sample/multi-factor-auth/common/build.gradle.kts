@@ -41,7 +41,7 @@ kotlin {
                 api(compose.foundation)
                 api(compose.material3)
                 api(compose.materialIconsExtended)
-                addModules(SupabaseModule.AUTH)
+                api(libs.supabase.released.auth)
                 api(libs.koin.core)
             }
         }

@@ -1,6 +1,6 @@
 package vectors.index
 
-import io.github.jan.supabase.storage.vectors.index.ListIndexesResponse
+import io.supabase.storage.vectors.index.ListIndexesResponse
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
