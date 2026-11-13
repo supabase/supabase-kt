@@ -112,7 +112,8 @@ class FunctionsTest {
                 requestHandler = {
                     assertEquals("POST", it.method.value)
                     assertEquals("/$expectedName", it.url.pathAfterVersion())
-                    assertEquals(expectedRegion.value, it.headers["x-region"])
+                    assertEquals(listOf(expectedRegion.value), it.headers.getAll("x-region"))
+                    assertEquals(expectedRegion.value, it.url.parameters["forceFunctionRegion"])
                     assertEquals("myValue", it.headers["myHeader"])
                     respond("")
                 }
@@ -143,7 +144,8 @@ class FunctionsTest {
                     assertEquals(expectedBody, body)
                     assertEquals("POST", it.method.value)
                     assertEquals("/$expectedName", it.url.pathAfterVersion())
-                    assertEquals(expectedRegion.value, it.headers["x-region"])
+                    assertEquals(listOf(expectedRegion.value), it.headers.getAll("x-region"))
+                    assertEquals(expectedRegion.value, it.url.parameters["forceFunctionRegion"])
                     respond("")
                 }
             )
@@ -169,7 +171,8 @@ class FunctionsTest {
                 requestHandler = {
                     assertEquals("POST", it.method.value)
                     assertEquals("/$expectedName", it.url.pathAfterVersion())
-                    assertEquals(expectedRegion.value, it.headers["x-region"])
+                    assertEquals(listOf(expectedRegion.value), it.headers.getAll("x-region"))
+                    assertEquals(expectedRegion.value, it.url.parameters["forceFunctionRegion"])
                     respond("streaming content")
                 }
             )
@@ -180,6 +183,23 @@ class FunctionsTest {
             statement.execute { response ->
                 assertEquals("streaming content", response.bodyAsText())
             }
+        }
+    }
+
+    @Test
+    fun testInvokingWithAnyRegionSendsNoRegionHeader() {
+        runTest {
+            supabase = createMockedSupabaseClient(
+                configuration = configuration,
+                requestHandler = {
+                    assertNull(it.headers["x-region"])
+                    assertNull(it.url.parameters["forceFunctionRegion"])
+                    respond("")
+                }
+            )
+            supabase.functions.invoke("myFunction")
+            supabase.functions.invoke("myFunction", region = FunctionRegion.ANY)
+            supabase.functions.prepareInvoke("myFunction").execute()
         }
     }
 
