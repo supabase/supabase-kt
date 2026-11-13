@@ -178,7 +178,7 @@ class AuthRequestTest {
                 assertEquals(expectedPassword, body["password"]?.jsonPrimitive?.content)
                 assertEquals(captchaToken, metaSecurity["captcha_token"]?.jsonPrimitive?.content)
                 assertEquals(userData, body["data"]!!.jsonObject)
-                containsCodeChallenge(body)
+                assertNull(body["code_challenge"])
                 respondJson(
                     sampleSessionWithUserData()
                 )
@@ -216,7 +216,7 @@ class AuthRequestTest {
                 assertEquals(expectedPassword, body["password"]?.jsonPrimitive?.content)
                 assertEquals(captchaToken, metaSecurity["captcha_token"]?.jsonPrimitive?.content)
                 assertEquals(userData, body["data"]!!.jsonObject)
-                containsCodeChallenge(body)
+                assertNull(body["code_challenge"])
                 respondJson(
                     sampleUserObject(phone = expectedPhone)
                 )
@@ -594,6 +594,7 @@ class AuthRequestTest {
                 assertEquals(expectedData, body["data"]!!.jsonObject)
                 assertEquals(expectedPassword, body["password"]?.jsonPrimitive?.content)
                 assertEquals(expectedCurrentPassword, body["currentPassword"]?.jsonPrimitive?.content)
+                assertNotNull(body["code_challenge"])
                 respondJson(
                     sampleUserObject(email = expectedEmail, phone = expectedPhone)
                 )
@@ -607,6 +608,22 @@ class AuthRequestTest {
             }
             assertEquals(expectedEmail, user.email, "Email should be equal")
             assertEquals(expectedPhone, user.phone, "Phone should be equal")
+        }
+    }
+
+    @Test
+    fun testUpdateUserWithoutEmailSendsNoCodeChallenge() {
+        runTest {
+            client = createMockedSupabaseClient(configuration = configuration) {
+                val body = it.body.toJsonElement().jsonObject
+                assertEquals("password", body["password"]?.jsonPrimitive?.content)
+                assertNull(body["code_challenge"])
+                assertNull(body["code_challenge_method"])
+                respondJson(sampleUserObject())
+            }.awaitInit()
+            client.auth.updateUser {
+                password = "password"
+            }
         }
     }
 

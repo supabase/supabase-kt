@@ -290,7 +290,7 @@ internal class AuthImpl(
         config: UserUpdateBuilder.() -> Unit
     ): UserInfo {
         val updateBuilder = UserUpdateBuilder(serializer = serializer).apply(config)
-        val codeChallenge = preparePKCEIfEnabled()
+        val codeChallenge = if (updateBuilder.email != null) preparePKCEIfEnabled() else null
         val body = buildJsonObject {
             putJsonObject(supabaseJson.encodeToJsonElement(updateBuilder).jsonObject)
             codeChallenge?.let(::putCodeChallenge)
