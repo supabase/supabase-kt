@@ -175,8 +175,12 @@ internal class BucketApiImpl(
                 paths.forEach(this::add)
             }
             put("expiresIn", expiresIn.inWholeSeconds)
-        }).safeBody<List<SignedUrl>>().map {
-            it.copy(signedURL = resolveSignedUrl(it.signedURL, modifier))
+        }).safeBody<List<SignedUrlResponse>>().map {
+            SignedUrl(
+                error = it.error,
+                signedURL = it.signedURL?.let { url -> resolveSignedUrl(url, modifier) } ?: "",
+                path = it.path
+            )
         }
         return body
     }

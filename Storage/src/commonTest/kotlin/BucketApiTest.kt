@@ -515,6 +515,35 @@ class BucketApiTest {
     }
 
     @Test
+    fun testCreateSignedUrlsWithMissingPath() {
+        runTest {
+            val expectedError = "Either the object does not exist or you do not have access to it"
+            val expectedUrl = "/object/sign/$bucketId/folder/data.png?token=11111"
+            client = createMockedSupabaseClient(configuration = configureClient) {
+                respond(
+                    content = """
+                    [
+                        { "error": null, "signedURL": "$expectedUrl", "path": "folder/data.png" },
+                        { "error": "$expectedError", "signedURL": null, "path": "folder/missing.png" }
+                    ]
+                    """.trimIndent(),
+                    headers = headersOf(
+                        HttpHeaders.ContentType,
+                        ContentType.Application.Json.toString()
+                    )
+                )
+            }
+            val urls = client.storage[bucketId].createSignedUrls(120.seconds, "folder/data.png", "folder/missing.png")
+            assertEquals(2, urls.size)
+            assertNull(urls[0].error)
+            assertEquals(client.storage.resolveUrl(expectedUrl.substring(1)), urls[0].signedURL)
+            assertEquals("folder/missing.png", urls[1].path)
+            assertEquals(expectedError, urls[1].error)
+            assertEquals("", urls[1].signedURL)
+        }
+    }
+
+    @Test
     fun testCreateSignedUploadUrl() {
         runTest {
             val expectedPath = "folder/data.png"
