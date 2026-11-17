@@ -1,4 +1,4 @@
-import io.github.jan.supabase.postgrest.query.Columns
+import io.supabase.postgrest.query.Columns
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.serialization.Serializable

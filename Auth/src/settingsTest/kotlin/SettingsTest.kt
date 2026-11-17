@@ -1,4 +1,4 @@
-import io.github.jan.supabase.auth.createDefaultSettingsKey
+import io.supabase.auth.createDefaultSettingsKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

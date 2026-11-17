@@ -1,12 +1,12 @@
 package vectors.index
 
-import io.github.jan.supabase.auth.api.AuthenticatedSupabaseApi
-import io.github.jan.supabase.storage.vectors.DistanceMetric
-import io.github.jan.supabase.storage.vectors.data.VectorDataApi
-import io.github.jan.supabase.storage.vectors.index.MetadataConfiguration
-import io.github.jan.supabase.storage.vectors.index.VectorDataType
-import io.github.jan.supabase.storage.vectors.index.VectorIndexApiImpl
-import io.github.jan.supabase.testing.MockedHttpClient
+import io.supabase.auth.api.AuthenticatedSupabaseApi
+import io.supabase.storage.vectors.DistanceMetric
+import io.supabase.storage.vectors.data.VectorDataApi
+import io.supabase.storage.vectors.index.MetadataConfiguration
+import io.supabase.storage.vectors.index.VectorDataType
+import io.supabase.storage.vectors.index.VectorIndexApiImpl
+import io.supabase.testing.MockedHttpClient
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod

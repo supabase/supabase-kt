@@ -33,6 +33,7 @@ immutable-collections = "0.5.2"
 crypto = "0.6.0"
 jwt-kt = "1.2.1"
 supabase-kt-plugins = "3.8.0" # https://github.com/supabase-community/supabase-kt-plugins
+supabase-kt-released = "3.9.0" # latest published core, used by the samples until 4.0.0 is on Maven Central
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -122,6 +123,10 @@ coil2-svg = { module = "io.coil-kt:coil-svg", version.ref = "coil2" }
 coil2-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil2" }
 compose-auth = { module = "io.github.jan-tennert.supabase:compose-auth", version.ref = "supabase-kt-plugins" }
 compose-auth-ui = { module = "io.github.jan-tennert.supabase:compose-auth-ui", version.ref = "supabase-kt-plugins" }
+supabase-released-auth = { module = "io.github.jan-tennert.supabase:auth-kt", version.ref = "supabase-kt-released" }
+supabase-released-postgrest = { module = "io.github.jan-tennert.supabase:postgrest-kt", version.ref = "supabase-kt-released" }
+supabase-released-realtime = { module = "io.github.jan-tennert.supabase:realtime-kt", version.ref = "supabase-kt-released" }
+supabase-released-storage = { module = "io.github.jan-tennert.supabase:storage-kt", version.ref = "supabase-kt-released" }
 
 [bundles]
 ktor-client = ["ktor-client-core", "ktor-client-content-negotiation", "ktor-json"]

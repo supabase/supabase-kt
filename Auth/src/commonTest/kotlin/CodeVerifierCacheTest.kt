@@ -1,4 +1,4 @@
-import io.github.jan.supabase.auth.MemoryCodeVerifierCache
+import io.supabase.auth.MemoryCodeVerifierCache
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

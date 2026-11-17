@@ -1,8 +1,8 @@
-import io.github.jan.supabase.exceptions.BadRequestRestException
-import io.github.jan.supabase.exceptions.NotFoundRestException
-import io.github.jan.supabase.exceptions.RestException
-import io.github.jan.supabase.exceptions.UnauthorizedRestException
-import io.github.jan.supabase.exceptions.UnknownRestException
+import io.supabase.exceptions.BadRequestRestException
+import io.supabase.exceptions.NotFoundRestException
+import io.supabase.exceptions.RestException
+import io.supabase.exceptions.UnauthorizedRestException
+import io.supabase.exceptions.UnknownRestException
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
