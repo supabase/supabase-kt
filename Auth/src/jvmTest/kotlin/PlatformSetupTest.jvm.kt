@@ -1,5 +1,5 @@
-import io.github.jan.supabase.auth.setupPlatform
-import io.github.jan.supabase.auth.status.SessionStatus
+import io.supabase.auth.setupPlatform
+import io.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.test.runTest
 import kotlin.test.assertIs
 

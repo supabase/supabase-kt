@@ -1,8 +1,8 @@
-import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.decode
-import io.github.jan.supabase.encode
-import io.github.jan.supabase.serializer.MoshiSerializer
-import io.github.jan.supabase.testing.createMockedSupabaseClient
+import io.supabase.SupabaseClient
+import io.supabase.decode
+import io.supabase.encode
+import io.supabase.serializer.MoshiSerializer
+import io.supabase.testing.createMockedSupabaseClient
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import kotlin.test.AfterTest

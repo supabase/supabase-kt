@@ -1,4 +1,4 @@
-import io.github.jan.supabase.storage.vectors.DistanceMetric
+import io.supabase.storage.vectors.DistanceMetric
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals

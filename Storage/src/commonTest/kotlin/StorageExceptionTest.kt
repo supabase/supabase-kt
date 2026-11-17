@@ -1,10 +1,10 @@
-import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.SupabaseClientBuilder
-import io.github.jan.supabase.storage.Storage
-import io.github.jan.supabase.storage.StorageRestException
-import io.github.jan.supabase.storage.storage
-import io.github.jan.supabase.testing.createMockedSupabaseClient
-import io.github.jan.supabase.testing.respondJson
+import io.supabase.SupabaseClient
+import io.supabase.SupabaseClientBuilder
+import io.supabase.storage.Storage
+import io.supabase.storage.StorageRestException
+import io.supabase.storage.storage
+import io.supabase.testing.createMockedSupabaseClient
+import io.supabase.testing.respondJson
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest

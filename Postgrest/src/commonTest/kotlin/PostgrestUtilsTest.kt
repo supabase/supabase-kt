@@ -1,4 +1,4 @@
-package io.github.jan.supabase.postgrest
+package io.supabase.postgrest
 
 import kotlinx.serialization.Serializable
 import kotlin.test.Test

@@ -36,7 +36,7 @@ Supported targets:
 
 *You don't necessarily need to install this library directly. It is a dependency of the other Supabase-kt libraries.*
 
-Newest version: [![](https://img.shields.io/github/release/supabase-community/supabase-kt?label=)](https://github.com/supabase-community/supabase-kt/releases)
+Newest version: [![](https://img.shields.io/github/release/supabase/supabase-kt?label=)](https://github.com/supabase/supabase-kt/releases)
 
 ```kotlin
 dependencies {
