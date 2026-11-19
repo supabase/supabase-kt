@@ -1,7 +1,7 @@
-import io.github.jan.supabase.auth.jwt.JWK
-import io.github.jan.supabase.auth.jwt.ecJwkToDer
-import io.github.jan.supabase.auth.jwt.ecdsaRawToDer
-import io.github.jan.supabase.auth.jwt.rsaJwkToDer
+import io.supabase.auth.jwt.JWK
+import io.supabase.auth.jwt.ecJwkToDer
+import io.supabase.auth.jwt.ecdsaRawToDer
+import io.supabase.auth.jwt.rsaJwkToDer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlin.test.Test

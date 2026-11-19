@@ -1,4 +1,4 @@
-import io.github.jan.supabase.realtime.RealtimeTopic
+import io.supabase.realtime.RealtimeTopic
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

@@ -1,5 +1,5 @@
-import io.github.jan.supabase.CurrentPlatformTarget
-import io.github.jan.supabase.PlatformTarget
+import io.supabase.CurrentPlatformTarget
+import io.supabase.PlatformTarget
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

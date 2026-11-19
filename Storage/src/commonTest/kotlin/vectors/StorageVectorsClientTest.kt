@@ -1,8 +1,8 @@
 package vectors
 
-import io.github.jan.supabase.auth.api.AuthenticatedSupabaseApi
-import io.github.jan.supabase.storage.vectors.StorageVectorsClientImpl
-import io.github.jan.supabase.testing.MockedHttpClient
+import io.supabase.auth.api.AuthenticatedSupabaseApi
+import io.supabase.storage.vectors.StorageVectorsClientImpl
+import io.supabase.testing.MockedHttpClient
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod

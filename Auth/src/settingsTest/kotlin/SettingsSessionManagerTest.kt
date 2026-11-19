@@ -1,7 +1,7 @@
 import com.russhwolf.settings.MapSettings
-import io.github.jan.supabase.auth.SettingsSessionManager
-import io.github.jan.supabase.auth.exception.NoSessionFoundException
-import io.github.jan.supabase.auth.user.UserSession
+import io.supabase.auth.SettingsSessionManager
+import io.supabase.auth.exception.NoSessionFoundException
+import io.supabase.auth.user.UserSession
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
