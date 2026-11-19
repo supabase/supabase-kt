@@ -1,6 +1,6 @@
 package vectors
 
-import io.github.jan.supabase.storage.vectors.bucket.ListVectorBucketsResponse
+import io.supabase.storage.vectors.bucket.ListVectorBucketsResponse
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put

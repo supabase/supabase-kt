@@ -1,4 +1,4 @@
-import io.github.jan.supabase.serializer.UnixTimestampSerializer
+import io.supabase.serializer.UnixTimestampSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject

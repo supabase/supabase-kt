@@ -1,10 +1,10 @@
-import io.github.jan.supabase.CurrentPlatformTarget
-import io.github.jan.supabase.PlatformTarget
-import io.github.jan.supabase.postgrest.PropertyConversionMethod
-import io.github.jan.supabase.postgrest.query.filter.FilterOperation
-import io.github.jan.supabase.postgrest.query.filter.FilterOperator
-import io.github.jan.supabase.postgrest.query.filter.PostgrestFilterBuilder
-import io.github.jan.supabase.postgrest.query.filter.TextSearchType
+import io.supabase.CurrentPlatformTarget
+import io.supabase.PlatformTarget
+import io.supabase.postgrest.PropertyConversionMethod
+import io.supabase.postgrest.query.filter.FilterOperation
+import io.supabase.postgrest.query.filter.FilterOperator
+import io.supabase.postgrest.query.filter.PostgrestFilterBuilder
+import io.supabase.postgrest.query.filter.TextSearchType
 import io.ktor.http.decodeURLQueryComponent
 import io.ktor.http.formUrlEncode
 import io.ktor.http.parametersOf

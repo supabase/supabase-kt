@@ -1,4 +1,4 @@
-import io.github.jan.supabase.auth.url.consumeUrlParameter
+import io.supabase.auth.url.consumeUrlParameter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

@@ -1,4 +1,4 @@
-import io.github.jan.supabase.dsl.required
+import io.supabase.dsl.required
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

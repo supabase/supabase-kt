@@ -1,7 +1,7 @@
-import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.result.PostgrestResult
-import io.github.jan.supabase.testing.createMockedSupabaseClient
+import io.supabase.postgrest.Postgrest
+import io.supabase.postgrest.postgrest
+import io.supabase.postgrest.result.PostgrestResult
+import io.supabase.testing.createMockedSupabaseClient
 import io.ktor.http.Headers
 import io.ktor.http.headersOf
 import kotlinx.serialization.Serializable
