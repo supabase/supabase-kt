@@ -6,10 +6,10 @@ fun ApplicationExtension.configureApplicationAndroidTarget(
     javaVersion: JavaVersion = JavaVersion.VERSION_1_8
 ) {
     compileSdk = 37
-    namespace = "io.github.jan.supabase.android"
+    namespace = "io.supabase.android"
 
     defaultConfig {
-        applicationId = "io.github.jan.supabase.android"
+        applicationId = "io.supabase.android"
         minSdk = 26
         versionCode = 1
         versionName = "1.0-SNAPSHOT"

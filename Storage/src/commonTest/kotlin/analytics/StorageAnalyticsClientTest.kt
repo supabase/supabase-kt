@@ -1,11 +1,11 @@
 package analytics
 
-import io.github.jan.supabase.auth.api.AuthenticatedSupabaseApi
-import io.github.jan.supabase.storage.Storage
-import io.github.jan.supabase.storage.storage
-import io.github.jan.supabase.storage.analytics.StorageAnalyticsClientImpl
-import io.github.jan.supabase.testing.MockedHttpClient
-import io.github.jan.supabase.testing.createMockedSupabaseClient
+import io.supabase.auth.api.AuthenticatedSupabaseApi
+import io.supabase.storage.Storage
+import io.supabase.storage.storage
+import io.supabase.storage.analytics.StorageAnalyticsClientImpl
+import io.supabase.testing.MockedHttpClient
+import io.supabase.testing.createMockedSupabaseClient
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod

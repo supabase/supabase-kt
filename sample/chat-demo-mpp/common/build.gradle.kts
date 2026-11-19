@@ -26,7 +26,7 @@ kotlin {
         }
     }
     compilerOptions.freeCompilerArgs.add("-Xexpect-actual-classes")
-    configuredAndroidTarget()
+    configuredAndroidTarget(JvmTarget.JVM_11)
     jvmToolchain(11)
     jvm("desktop") {
         compilerOptions {
@@ -52,7 +52,9 @@ kotlin {
                 api(compose.foundation)
                 api(compose.material3)
                 api(compose.materialIconsExtended)
-                addModules(SupabaseModule.AUTH, SupabaseModule.POSTGREST, SupabaseModule.REALTIME)
+                api(libs.supabase.released.auth)
+                api(libs.supabase.released.postgrest)
+                api(libs.supabase.released.realtime)
                 api(libs.compose.auth)
                 api(libs.compose.auth.ui)
                 api(libs.koin.core)

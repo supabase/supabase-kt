@@ -1,5 +1,5 @@
 import com.russhwolf.settings.MapSettings
-import io.github.jan.supabase.auth.SettingsCodeVerifierCache
+import io.supabase.auth.SettingsCodeVerifierCache
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

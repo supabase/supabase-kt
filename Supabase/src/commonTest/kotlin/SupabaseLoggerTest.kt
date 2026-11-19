@@ -1,6 +1,6 @@
-import io.github.jan.supabase.logging.LogLevel
-import io.github.jan.supabase.logging.SupabaseLogger
-import io.github.jan.supabase.logging.SupabaseLoggingProcessor
+import io.supabase.logging.LogLevel
+import io.supabase.logging.SupabaseLogger
+import io.supabase.logging.SupabaseLoggingProcessor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel

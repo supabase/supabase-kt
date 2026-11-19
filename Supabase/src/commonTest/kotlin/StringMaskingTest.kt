@@ -1,8 +1,8 @@
-import io.github.jan.supabase.StringMasking.maskHeaders
-import io.github.jan.supabase.StringMasking.maskParameterString
-import io.github.jan.supabase.StringMasking.maskParameters
-import io.github.jan.supabase.StringMasking.maskString
-import io.github.jan.supabase.StringMasking.maskUrl
+import io.supabase.StringMasking.maskHeaders
+import io.supabase.StringMasking.maskParameterString
+import io.supabase.StringMasking.maskParameters
+import io.supabase.StringMasking.maskString
+import io.supabase.StringMasking.maskUrl
 import io.ktor.http.Url
 import io.ktor.http.headers
 import kotlin.test.Test

@@ -1,9 +1,9 @@
 package request
 
-import io.github.jan.supabase.postgrest.PropertyConversionMethod
-import io.github.jan.supabase.postgrest.RpcMethod
-import io.github.jan.supabase.postgrest.query.Count
-import io.github.jan.supabase.postgrest.query.request.RpcRequestBuilder
+import io.supabase.postgrest.PropertyConversionMethod
+import io.supabase.postgrest.RpcMethod
+import io.supabase.postgrest.query.Count
+import io.supabase.postgrest.query.request.RpcRequestBuilder
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
