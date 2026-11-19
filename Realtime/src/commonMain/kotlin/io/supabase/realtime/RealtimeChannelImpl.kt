@@ -149,16 +149,18 @@ internal class RealtimeChannelImpl(
             RealtimeMessage(topic, RealtimeChannel.CHANNEL_EVENT_JOIN, joinConfigObject, websocket.makeRef(), joinRef.load())
         )
         startJoinTimeout()
-        if(blockUntilSubscribed) {
-            // Both are state, so an outcome that comes before this starts waiting isn't missed
-            combine(status, joinEnded) { status, ended ->
-                when {
-                    status == RealtimeChannel.Status.SUBSCRIBED -> true
-                    ended != null -> throw RealtimeChannelJoinException(ended.message, ended.error)
-                    else -> false
-                }
-            }.first { it }
-        }
+        if(blockUntilSubscribed) awaitSubscribed()
+    }
+
+    // Both are state, so an outcome that comes before this starts waiting isn't missed
+    private suspend fun awaitSubscribed() {
+        combine(status, joinEnded) { status, ended ->
+            when {
+                status == RealtimeChannel.Status.SUBSCRIBED -> true
+                ended != null -> throw RealtimeChannelJoinException(ended.message, ended.error)
+                else -> false
+            }
+        }.first { it }
     }
 
     // Null once connected, or why the channel stopped trying to join before that
