@@ -138,6 +138,66 @@ class PostgrestTest {
     }
 
     @Test
+    fun testMaybeSingleDoesntThrowOnZeroRowsWithCurrentPostgrestWording() {
+        testClient(
+            request = { table ->
+                val result = from(table).select() {
+                    maybeSingle()
+                }
+                assertEquals("", result.data)
+                result
+            },
+            requestHandler = {
+                respond("""
+                    { "code": "PGRST116", "details": "Results contain 0 rows, application/vnd.pgrst.object+json requires 1 row", "hint": null, "message": "Cannot coerce the result to a single JSON object"}
+                """.trimIndent(), HttpStatusCode.NotAcceptable)
+            }
+        )
+    }
+
+    @Test
+    fun testMaybeSingleThrowsOnMultipleRows() {
+        for (details in listOf(
+            "Results contain 2 rows, application/vnd.pgrst.object+json requires 1 row",
+            "The result contains 2 rows"
+        )) {
+            val exception = assertFailsWith<PostgrestRestException> {
+                testClient(
+                    request = { table ->
+                        from(table).select() {
+                            maybeSingle()
+                        }
+                    },
+                    requestHandler = {
+                        respond("""
+                            { "code": "PGRST116", "details": "$details", "hint": null, "message": "Cannot coerce the result to a single JSON object"}
+                        """.trimIndent(), HttpStatusCode.NotAcceptable)
+                    }
+                )
+            }
+            assertEquals("PGRST116", exception.code)
+        }
+    }
+
+    @Test
+    fun testMaybeSingleThrowsWhenRowCountIsUnknown() {
+        assertFailsWith<PostgrestRestException> {
+            testClient(
+                request = { table ->
+                    from(table).select() {
+                        maybeSingle()
+                    }
+                },
+                requestHandler = {
+                    respond("""
+                        { "code": "PGRST116", "details": null, "hint": null, "message": "Cannot coerce the result to a single JSON object"}
+                    """.trimIndent(), HttpStatusCode.NotAcceptable)
+                }
+            )
+        }
+    }
+
+    @Test
     fun testSelectSchema() {
         val columns = Columns.list("column1", "column2")
         testClient(
