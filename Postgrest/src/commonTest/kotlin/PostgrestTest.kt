@@ -29,6 +29,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
@@ -38,6 +39,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 class PostgrestTest {
@@ -291,6 +293,40 @@ class PostgrestTest {
             },
             requestHandler = {
                 assertEquals("\"price (usd)\",\"a.b\"", it.url.parameters["columns"])
+                respond("")
+            }
+        )
+    }
+
+    @Test
+    fun testInsertEscapesColumnNames() {
+        val body = JsonArray(listOf(buildJsonObject {
+            put("a\"b", 1)
+            put("c\\d", 2)
+        }))
+        testClient(
+            request = { table ->
+                from(table).insert(body)
+            },
+            requestHandler = {
+                assertEquals("\"a\\\"b\",\"c\\\\d\"", it.url.parameters["columns"])
+                respond("")
+            }
+        )
+    }
+
+    @Test
+    fun testUpsertEscapesColumnNames() {
+        val body = JsonArray(listOf(buildJsonObject {
+            put("a\"b", 1)
+            put("c\\d", 2)
+        }))
+        testClient(
+            request = { table ->
+                from(table).upsert(body)
+            },
+            requestHandler = {
+                assertEquals("\"a\\\"b\",\"c\\\\d\"", it.url.parameters["columns"])
                 respond("")
             }
         )
@@ -688,6 +724,32 @@ class PostgrestTest {
         runTest {
             supabase.postgrest.rpc("function", parameters) {
                 method = RpcMethod.GET
+            }
+        }
+    }
+
+    @Test
+    fun testRpcNullParametersAreOmittedFromQuery() {
+        val parameters = buildJsonObject {
+            put("missing", JsonNull)
+            put("text", "null")
+            put("ids", JsonArray(listOf(JsonPrimitive(1), JsonNull)))
+        }
+        for (rpcMethod in listOf(RpcMethod.GET, RpcMethod.HEAD)) {
+            supabase = createMockedSupabaseClient(
+                configuration = configureClient
+            ) {
+                assertPathIs("/rpc/function", it.url.pathAfterVersion())
+                assertMethodIs(rpcMethod.httpMethod, it.method)
+                assertFalse(it.url.parameters.contains("missing"))
+                assertEquals("null", it.url.parameters["text"])
+                assertEquals("{1,NULL}", it.url.parameters["ids"])
+                respond("")
+            }
+            runTest {
+                supabase.postgrest.rpc("function", parameters) {
+                    method = rpcMethod
+                }
             }
         }
     }

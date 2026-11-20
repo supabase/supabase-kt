@@ -28,11 +28,7 @@ fun FilterOperation.escapedValue(isInLogicalExpression: Boolean): String =
         FilterOperator.WFTS,
         FilterOperator.PHFTS,
         FilterOperator.ISDISTINCT,
-        FilterOperator.PLFTS ->
-            if (isInLogicalExpression)
-                escapeValue(value)
-            else
-                value.toString()
+        FilterOperator.PLFTS -> encodeScalar(value, isInLogicalExpression)
         FilterOperator.IN ->
             if (value is List<*>) {
                 encodeAsList(value)
@@ -44,14 +40,10 @@ fun FilterOperation.escapedValue(isInLogicalExpression: Boolean): String =
         FilterOperator.OV ->
             when (value) {
                 is List<*> ->
-                    encodeOverlapAsArray(value)
+                    quoteInLogicalExpression(encodeOverlapAsArray(value), isInLogicalExpression)
                 is Pair<*, *> ->
-                    encodeOverlapAsRange(value)
-                else ->
-                    if (isInLogicalExpression)
-                        escapeValue(value)
-                    else
-                        value.toString()
+                    quoteInLogicalExpression(encodeOverlapAsRange(value), isInLogicalExpression)
+                else -> encodeScalar(value, isInLogicalExpression)
             }
         FilterOperator.SL,
         FilterOperator.SR,
@@ -59,38 +51,61 @@ fun FilterOperation.escapedValue(isInLogicalExpression: Boolean): String =
         FilterOperator.NXR,
         FilterOperator.ADJ ->
             when (value) {
-                is Pair<*, *> -> encodeAsRange(value)
-                is List<*> -> encodeAsRange(value)
-                else -> escapeValue(value)
+                is Pair<*, *> -> quoteInLogicalExpression(encodeAsRange(value), isInLogicalExpression)
+                is List<*> -> quoteInLogicalExpression(encodeAsRange(value), isInLogicalExpression)
+                else -> encodeScalar(value, isInLogicalExpression)
             }
     }
+
+private fun encodeScalar(value: Any?, isInLogicalExpression: Boolean): String =
+    if (isInLogicalExpression) escapeValue(value) else value.toString()
 
 private fun encodeAsList(values: List<*>): String =
     values.joinToString(",", prefix = "(", postfix = ")") { escapeValue(it) }
 
 private fun encodeAsRange(range: Pair<*, *>): String =
-    "(${range.first},${range.second})"
+    "(${escapeRangeBound(range.first)},${escapeRangeBound(range.second)})"
 
 private fun encodeAsRange(range: List<*>): String =
-    "(${range[0]},${range[1]})"
+    "(${escapeRangeBound(range[0])},${escapeRangeBound(range[1])})"
 
 private fun encodeOverlapAsRange(range: Pair<*, *>): String =
-    "[${range.first},${range.second}]"
+    "[${escapeRangeBound(range.first)},${escapeRangeBound(range.second)}]"
 
 private fun encodeOverlapAsArray(values: List<*>): String =
     values.joinToString(",", prefix = "{", postfix = "}") { escapeArrayLiteralElement(it) }
 
-private val quotedCharacters = listOf(",", ".", ":", "(", ")")
+private val quotedCharacters = setOf(',', '.', ':', '(', ')', '"', '\\', '{', '}')
+
+private val quotedRangeBoundCharacters = setOf('(', ')', '[', ']', ',', '"', '\\')
+
+@PublishedApi
+internal fun quoteValue(value: String): String {
+    val escaped = value
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+    return "\"$escaped\""
+}
+
+/**
+ * Inside `or`/`and` PostgREST ends an unquoted value at the first `,` or `)`, so composite values have to be quoted as a whole.
+ */
+internal fun quoteInLogicalExpression(value: String, isInLogicalExpression: Boolean): String =
+    if (isInLogicalExpression) quoteValue(value) else value
 
 internal fun escapeValue(value: Any?): String {
     val asString = value.toString()
-        .replace("\\", "\\\\")
-        .replace("\"", "\\\"")
-    return if (quotedCharacters.any { asString.contains(it) }) {
-        "\"$asString\""
-    } else {
-        asString
-    }
+    val needsQuoting = asString.isEmpty() ||
+        asString.first().isWhitespace() || asString.last().isWhitespace() ||
+        asString.any { it in quotedCharacters }
+    return if (needsQuoting) quoteValue(asString) else asString
+}
+
+private fun escapeRangeBound(value: Any?): String {
+    if (value == null) return ""
+    val asString = value.toString()
+    val needsQuoting = asString.isEmpty() || asString.any { it in quotedRangeBoundCharacters }
+    return if (needsQuoting) quoteValue(asString) else asString
 }
 
 internal fun escapeArrayLiteralElement(value: Any?): String {
@@ -100,9 +115,5 @@ internal fun escapeArrayLiteralElement(value: Any?): String {
         asString.equals("NULL", ignoreCase = true) ||
         asString.first().isWhitespace() || asString.last().isWhitespace() ||
         asString.any { it == ',' || it == '{' || it == '}' || it == '"' || it == '\\' }
-    if (!needsQuoting) return asString
-    val escaped = asString
-        .replace("\\", "\\\\")
-        .replace("\"", "\\\"")
-    return "\"$escaped\""
+    return if (needsQuoting) quoteValue(asString) else asString
 }
