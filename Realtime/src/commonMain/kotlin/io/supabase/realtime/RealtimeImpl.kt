@@ -29,6 +29,7 @@ import io.ktor.websocket.readBytes
 import io.ktor.websocket.readText
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -48,6 +49,7 @@ import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.fetchAndIncrement
+import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -76,6 +78,9 @@ import kotlin.time.Duration
     )
     private val mutex = Mutex()
     private val isReconnecting = AtomicBoolean(false)
+    private val reconnectJob = AtomicReference<Job?>(null)
+    // A connection attempt in progress can't be cancelled, so it checks this to see that disconnect() was called
+    private val disconnectCount = AtomicInt(0)
     private val _accessToken = AtomicReference<String?>(null)
     val accessToken get() = _accessToken.load()
     private var heartbeatJob: Job? = null
@@ -100,15 +105,25 @@ import kotlin.time.Duration
 
     override suspend fun connect() = connect(false)
 
-    private suspend fun connect(reconnect: Boolean): Unit = mutex.withLock {
+    private suspend fun connect(reconnect: Boolean) {
+        val disconnects = disconnectCount.load()
+        mutex.withLock { connectLocked(reconnect, disconnects) }
+    }
+
+    private suspend fun connectLocked(reconnect: Boolean, disconnects: Int) {
         if (reconnect) {
             delay(config.reconnectDelay)
             logger.d { "Reconnecting..." }
         }
-        if (status.value == Realtime.Status.CONNECTED) return
+        if (status.value == Realtime.Status.CONNECTED || disconnectCount.load() != disconnects) return
         _status.value = Realtime.Status.CONNECTING
         try {
-            _websocket.store(websocketFactory.create(websocketUrl))
+            val websocket = websocketFactory.create(websocketUrl)
+            if(disconnectCount.load() != disconnects) {
+                websocket.disconnect()
+                return
+            }
+            _websocket.store(websocket)
             heartbeatRef.store(NO_HEARTBEAT)
             _status.value = Realtime.Status.CONNECTED
             logger.i { "Connected to realtime websocket!" }
@@ -127,7 +142,9 @@ import kotlin.time.Duration
             if(reconnect) {
                 isReconnecting.store(false)
             }
-            reconnect()
+            if(disconnectCount.load() == disconnects) {
+                reconnect()
+            }
         }
     }
 
@@ -221,6 +238,17 @@ import kotlin.time.Duration
     }
 
     override fun disconnect() {
+        disconnectCount.incrementAndFetch()
+        reconnectJob.exchange(null)?.cancel()
+        isReconnecting.store(false)
+        closeWebsocket()
+        for ((_, channel) in subscriptions) {
+            (channel as? RealtimeChannelImpl)?.endJoin("The realtime client disconnected from channel ${channel.topic}", null)
+        }
+    }
+
+    // Unlike disconnect(), for a reconnect too: channels rejoin afterwards, so a blocking subscribe() keeps waiting
+    private fun closeWebsocket() {
         logger.d { "Closing websocket connection" }
         messageJob?.cancel()
         heartbeatJob?.cancel()
@@ -290,12 +318,16 @@ import kotlin.time.Duration
     }
 
     override suspend fun removeChannel(channel: RealtimeChannel) {
-        if(channel.status.value == RealtimeChannel.Status.SUBSCRIBED) {
-            channel.unsubscribe()
-        }
+        leave(channel)
         _subscriptions.remove(channel.topic)
         if(subscriptions.isEmpty() && config.disconnectOnNoSubscriptions) {
             schedulePendingDisconnect()
+        }
+    }
+
+    private suspend fun leave(channel: RealtimeChannel) {
+        if(channel.status.value == RealtimeChannel.Status.SUBSCRIBED || channel.status.value == RealtimeChannel.Status.SUBSCRIBING) {
+            channel.unsubscribe()
         }
     }
 
@@ -322,11 +354,7 @@ import kotlin.time.Duration
     }
 
     override suspend fun removeAllChannels() {
-        _subscriptions.forEach { (_, it) ->
-            if(it.status.value == RealtimeChannel.Status.SUBSCRIBED) {
-                it.unsubscribe()
-            }
-        }
+        _subscriptions.forEach { (_, it) -> leave(it) }
         _subscriptions.clear()
         if(config.disconnectOnNoSubscriptions) {
             logger.d { "No more subscriptions, disconnecting from realtime websocket." }
@@ -402,10 +430,12 @@ import kotlin.time.Duration
 
     private fun reconnect() {
         if(isReconnecting.compareAndSet(expectedValue = false, newValue = true)) {
-            scope.launch {
-                disconnect()
+            val job = scope.launch(start = CoroutineStart.LAZY) {
+                closeWebsocket()
                 connect(true)
             }
+            reconnectJob.store(job)
+            job.start()
         }
     }
 

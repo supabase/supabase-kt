@@ -2,6 +2,7 @@ package io.supabase.realtime.event
 
 import io.supabase.logging.d
 import io.supabase.realtime.RealtimeChannel
+import io.supabase.realtime.RealtimeChannelImpl
 import io.supabase.realtime.RealtimeMessage
 
 /**
@@ -12,6 +13,7 @@ data object RCloseEvent : RealtimeEvent {
     override suspend fun handle(channel: RealtimeChannel, message: RealtimeMessage) {
         channel.realtime.removeChannel(channel)
         channel.logger.d { "Unsubscribed from channel ${message.topic}" }
+        (channel as RealtimeChannelImpl).endJoin("Channel ${message.topic} was closed", null)
         channel.updateStatus(RealtimeChannel.Status.UNSUBSCRIBED)
     }
 
