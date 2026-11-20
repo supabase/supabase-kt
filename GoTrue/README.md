@@ -32,7 +32,7 @@ Supported targets:
 
 - tvOS: tvosArm64, tvosX64, tvosSimulatorArm64
 
-- watchOS: watchosArm64, watchosX64, watchosSimulatorArm64
+- watchOS: watchosArm64, watchosDeviceArm64, watchosX64, watchosSimulatorArm64
 
 - MacOS: macosX64, macosArm64
 
