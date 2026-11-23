@@ -2,7 +2,7 @@
 kotlin = "2.4.21"
 accompanist-permissions = "0.37.3"
 ktor = "3.6.1"
-dokka = "2.2.0"
+dokka = "2.3.0"
 kotlinx-datetime = "0.8.0"
 kermit = "2.2.0"
 coroutines = "1.11.0"
