@@ -34,6 +34,7 @@ fun KotlinMultiplatformExtension.desktopTargets() {
     mingwX64()
     macosTargets()
     linuxX64()
+    linuxArm64()
 }
 
 fun KotlinMultiplatformExtension.configuredJvmTarget(jvmTarget: JvmTarget = JvmTarget.JVM_1_8) {

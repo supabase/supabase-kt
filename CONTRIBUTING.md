@@ -56,10 +56,13 @@ It is possible to run tests across all modules using the following commands from
 ./gradlew watchosX64Test
 ./gradlew watchosSimulatorArm64Test
 ./gradlew mingwX64Test
+./gradlew linuxX64Test
+./gradlew linuxArm64Test
 ```
 Some test targets have special requirements:
 - Browser tests require that Chrome, Firefox and Safari (on macOS) are installed.
 - `ios`/`watchos`/`tvos` tests only work on Mac and require that the relevant SDK is installed in Xcode.
+- `linuxX64` and `linuxArm64` tests only run on Linux with the matching CPU architecture.
 - Android does not have specific tests, but are tested implicitly through the `jvmTest` task.
 
 ### Integration Tests
