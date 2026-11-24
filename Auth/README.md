@@ -10,7 +10,7 @@ Supported targets:
 |--------|---------|-------------|--------|----------|-----------|-------------|-----------|
 | Status | ✅       | ✅           | ✅      | ✅        | ☑️*       | ☑️          | ☑️        |
 
-> ☑️ = No built-in OAuth support. Linux has no support for persistent session storage.
+> ☑️ = No built-in OAuth support.
 
 \* **iOS and macOS are fully supported**
 

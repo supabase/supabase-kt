@@ -12,10 +12,6 @@ fun createDefaultSettings() = try {
 }
 
 @SupabaseInternal
-fun createDefaultSettingsKey(supabaseUrl: String) =
-    "sb-${supabaseUrl.removeSuffix("/").replace('/', '-').replace('.', '-')}"
-
-@SupabaseInternal
 actual fun Auth.createDefaultSessionManager(): SessionManager =
     if(!IS_NODE)
         SettingsSessionManager(
