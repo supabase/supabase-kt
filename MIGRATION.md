@@ -1,7 +1,7 @@
 # Migrating from version 3.X to 4.0.0
 
 > [!NOTE]
-> 4.0.0 has not been released yet. The latest release is 3.9.0, which still uses the `io.github.jan-tennert.supabase` group and the `io.github.jan.supabase` package. This guide describes the upcoming change.
+> 4.0.0 is in pre-release. `4.0.0-alpha-1` is the first version published under `io.supabase`. The latest stable release is still 3.9.0, which uses the `io.github.jan-tennert.supabase` group and the `io.github.jan.supabase` package.
 
 ### New Maven group and package name
 
