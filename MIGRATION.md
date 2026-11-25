@@ -31,10 +31,10 @@ Artifact IDs are unchanged (`auth-kt`, `postgrest-kt`, `storage-kt`, `realtime-k
    - `io.github.jan-tennert.supabase` → `io.supabase`
    - `io.github.jan.supabase` → `io.supabase`
 
-   Or from the command line (macOS: use `sed -i ''`):
+   Or from the command line (works on macOS and Linux):
    ```bash
-   grep -rlE 'io\.github\.jan(-tennert)?\.supabase' --include='*.kt' --include='*.kts' --include='*.gradle' --include='*.java' --include='*.toml' --include='*.properties' --include='*.xml' --include='*.pro' --include='*.txt' --include='*.swift' . \
-     | xargs sed -i -E -e 's/io\.github\.jan-tennert\.supabase/io.supabase/g' -e 's/io\.github\.jan\.supabase/io.supabase/g'
+   grep -rlE --null 'io\.github\.jan(-tennert)?\.supabase' --include='*.kt' --include='*.kts' --include='*.gradle' --include='*.java' --include='*.toml' --include='*.properties' --include='*.xml' --include='*.pro' --include='*.txt' --include='*.swift' . \
+     | xargs -0 perl -pi -e 's/io\.github\.jan-tennert\.supabase/io.supabase/g; s/io\.github\.jan\.supabase/io.supabase/g'
    ```
 3. Search your project for `io.github.jan` once more. The following places are **not** checked by the compiler and stop working silently if they still use the old name:
    - **ProGuard / R8 rules** (e.g. `-keep class io.github.jan.supabase.** { *; }`). The rules no longer match, which can cause crashes that only appear in minified release builds.
