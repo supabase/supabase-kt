@@ -26,6 +26,15 @@ class RealtimePostgresFilterBuilderTest {
     }
 
     @Test
+    fun buildEscapesQuotesBackslashesAndWhitespace() {
+        assertEquals("a=eq.\"x\\\"y\",b=eq.\"x\\\\y\",c=eq.\" z\"", buildFilter {
+            eq("a", "x\"y")
+            eq("b", "x\\y")
+            eq("c", " z")
+        })
+    }
+
+    @Test
     fun buildInAndNotFilters() {
         assertEquals("id=in.(1,2,3),other=not.eq.4,distinct=isdistinct.5", buildFilter {
             isIn("id", listOf(1, 2, 3))

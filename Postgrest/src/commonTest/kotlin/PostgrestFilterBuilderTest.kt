@@ -449,6 +449,144 @@ class PostgrestFilterBuilderTest {
     }
 
     @Test
+    fun or_repeated_keepsEveryBlock() {
+        val params = filterParams {
+            or {
+                eq("id", 1)
+                eq("id", 2)
+            }
+            or {
+                eq("id", 2)
+                eq("id", 3)
+            }
+        }
+        assertEquals(mapOf("or" to listOf("(id.eq.1,id.eq.2)", "(id.eq.2,id.eq.3)")), params)
+    }
+
+    @Test
+    fun and_repeated_keepsEveryBlock() {
+        val params = filterParams {
+            and {
+                eq("id", 1)
+                eq("id", 2)
+            }
+            and {
+                eq("id", 2)
+                eq("id", 3)
+            }
+        }
+        assertEquals(mapOf("and" to listOf("(id.eq.1,id.eq.2)", "(id.eq.2,id.eq.3)")), params)
+    }
+
+    @Test
+    fun or_repeated_negated_keepsEveryBlock() {
+        val params = filterParams {
+            or(negate = true) { eq("id", 1) }
+            or(negate = true) { eq("id", 2) }
+        }
+        assertEquals(mapOf("not.or" to listOf("(id.eq.1)", "(id.eq.2)")), params)
+    }
+
+    @Test
+    fun and_repeated_negated_keepsEveryBlock() {
+        val params = filterParams {
+            and(negate = true) { eq("id", 1) }
+            and(negate = true) { eq("id", 2) }
+        }
+        assertEquals(mapOf("not.and" to listOf("(id.eq.1)", "(id.eq.2)")), params)
+    }
+
+    @Test
+    fun or_repeated_referencedTable_keepsEveryBlock() {
+        val params = filterParams {
+            or(referencedTable = "shops") { eq("id", 1) }
+            or(referencedTable = "shops") { eq("id", 2) }
+        }
+        assertEquals(mapOf("shops.or" to listOf("(id.eq.1)", "(id.eq.2)")), params)
+    }
+
+    @Test
+    fun and_repeated_referencedTable_keepsEveryBlock() {
+        val params = filterParams {
+            and(referencedTable = "shops") { eq("id", 1) }
+            and(referencedTable = "shops") { eq("id", 2) }
+        }
+        assertEquals(mapOf("shops.and" to listOf("(id.eq.1)", "(id.eq.2)")), params)
+    }
+
+    @Test
+    fun or_repeated_negated_referencedTable_keepsEveryBlock() {
+        val params = filterParams {
+            or(negate = true, referencedTable = "shops") { eq("id", 1) }
+            or(negate = true, referencedTable = "shops") { eq("id", 2) }
+        }
+        assertEquals(mapOf("not.shops.or" to listOf("(id.eq.1)", "(id.eq.2)")), params)
+    }
+
+    @Test
+    fun or_repeated_differentKeys_stayApart() {
+        val params = filterParams {
+            or { eq("id", 1) }
+            or(negate = true) { eq("id", 2) }
+            or(referencedTable = "shops") { eq("id", 3) }
+        }
+        assertEquals(
+            mapOf(
+                "or" to listOf("(id.eq.1)"),
+                "not.or" to listOf("(id.eq.2)"),
+                "shops.or" to listOf("(id.eq.3)")
+            ),
+            params
+        )
+    }
+
+    @Test
+    fun or_repeated_acrossFilterBlocks_keepsEveryBlock() {
+        //PostgrestRequestBuilder.filter creates one builder per call, all writing to the same params
+        val shared = mutableMapOf<String, List<String>>()
+        PostgrestFilterBuilder(PropertyConversionMethod.NONE, shared).or { eq("id", 1) }
+        PostgrestFilterBuilder(PropertyConversionMethod.NONE, shared).or { eq("id", 2) }
+        assertEquals(mapOf("or" to listOf("(id.eq.1)", "(id.eq.2)")), shared)
+    }
+
+    @Test
+    fun or_repeated_skipsEmptyBlocks() {
+        val params = filterParams {
+            or { eq("id", 1) }
+            or { }
+        }
+        assertEquals(mapOf("or" to listOf("(id.eq.1)")), params)
+    }
+
+    @Test
+    fun or_repeated_nested() {
+        val params = filterParams {
+            and {
+                or {
+                    eq("id", 1)
+                    eq("id", 2)
+                }
+                or {
+                    eq("id", 3)
+                    eq("id", 4)
+                }
+            }
+        }
+        assertEquals(mapOf("and" to listOf("(or(id.eq.1,id.eq.2),or(id.eq.3,id.eq.4))")), params)
+    }
+
+    @Test
+    fun and_repeated_nested_negated() {
+        val params = filterParams {
+            or {
+                and(negate = true) { eq("id", 1) }
+                and(negate = true) { eq("id", 2) }
+            }
+        }
+        assertEquals(mapOf("or" to listOf("(not.and(id.eq.1),not.and(id.eq.2))")), params)
+    }
+
+    @Test
     fun sl() {
         val filter = filterToString {
             sl("id", 1L to 10L)
@@ -769,6 +907,152 @@ class PostgrestFilterBuilderTest {
             filter("id", FilterOperator.SL, "foo")
         }
         assertEquals("id=sl.foo", filter)
+    }
+
+    @Test
+    fun or_quotes_double_quotes_and_backslashes() {
+        val filter = filterToString {
+            or {
+                eq("a", "x\"y")
+                eq("b", "x\\y")
+            }
+        }
+        assertEquals("or=(a.eq.\"x\\\"y\",b.eq.\"x\\\\y\")", filter)
+    }
+
+    @Test
+    fun or_quotes_braces() {
+        val filter = filterToString {
+            or {
+                eq("a", "{a}b")
+            }
+        }
+        assertEquals("or=(a.eq.\"{a}b\")", filter)
+    }
+
+    @Test
+    fun or_quotes_empty_value_and_surrounding_whitespace() {
+        val filter = filterToString {
+            or {
+                eq("a", "")
+                eq("b", " x")
+            }
+        }
+        assertEquals("or=(a.eq.\"\",b.eq.\"+x\")", filter)
+    }
+
+    @Test
+    fun isIn_quotes_double_quotes_and_backslashes() {
+        val filter = filterToString {
+            isIn("message", listOf("x\"y", "x\\y"))
+        }
+        assertEquals("message=in.(\"x\\\"y\",\"x\\\\y\")", filter)
+    }
+
+    @Test
+    fun isIn_quotes_surrounding_whitespace() {
+        val filter = filterToString {
+            isIn("message", listOf(" lead", "trail "))
+        }
+        assertEquals("message=in.(\"+lead\",\"trail+\")", filter)
+    }
+
+    @Test
+    fun textSearch_is_not_quoted_outside_logical_expressions() {
+        val filter = filterToString {
+            textSearch("doc", "a,b)", TextSearchType.PLAINTO)
+        }
+        assertEquals("doc=plfts.a,b)", filter)
+    }
+
+    @Test
+    fun textSearch_cannot_add_conditions_to_logical_expressions() {
+        val filter = filterToString {
+            or {
+                textSearch("doc", "x,secret.is.true", TextSearchType.PLAINTO)
+            }
+        }
+        assertEquals("or=(doc.plfts.\"x,secret.is.true\")", filter)
+    }
+
+    @Test
+    fun textSearch_cannot_close_logical_expressions() {
+        val filter = filterToString {
+            and {
+                textSearch("doc", "x)", TextSearchType.PLAINTO, "simple")
+                eq("owner", "bob")
+            }
+        }
+        assertEquals("and=(doc.plfts(simple).\"x)\",owner.eq.bob)", filter)
+    }
+
+    @Test
+    fun contains_is_quoted_in_logical_expressions() {
+        val filter = filterToString {
+            or {
+                contains("tags", listOf("a{b", "c"))
+            }
+        }
+        assertEquals("or=(tags.cs.\"{\\\"a{b\\\",c}\")", filter)
+    }
+
+    @Test
+    fun likeAny_is_quoted_in_logical_expressions() {
+        val filter = filterToString {
+            and {
+                likeAny("name", listOf("a}b", "c"))
+                ilikeAll("title", listOf("d"))
+            }
+        }
+        assertEquals("and=(name.like(any).\"{\\\"a}b\\\",c}\",title.ilike(all).\"{d}\")", filter)
+    }
+
+    @Test
+    fun range_is_quoted_in_logical_expressions() {
+        val filter = filterToString {
+            or {
+                adjacent("a", 1 to 2)
+                filter("b", FilterOperator.OV, 3 to 4)
+                filter("c", FilterOperator.SL, listOf(5, 6))
+            }
+        }
+        assertEquals("or=(a.adj.\"(1,2)\",b.ov.\"[3,4]\",c.sl.\"(5,6)\")", filter)
+    }
+
+    @Test
+    fun range_bounds_are_escaped() {
+        val filter = filterToString {
+            adjacent("a", "x,y" to "p\"q")
+        }
+        assertEquals("a=adj.(\"x,y\",\"p\\\"q\")", filter)
+    }
+
+    @Test
+    fun range_bounds_are_escaped_in_logical_expressions() {
+        val filter = filterToString {
+            or {
+                adjacent("a", "x,y" to "z")
+            }
+        }
+        assertEquals("or=(a.adj.\"(\\\"x,y\\\",z)\")", filter)
+    }
+
+    @Test
+    fun range_string_is_only_quoted_in_logical_expressions() {
+        val topLevel = filterToString {
+            filter("a", FilterOperator.SL, "[1,2)")
+        }
+        assertEquals("a=sl.[1,2)", topLevel)
+        val logical = filterToString {
+            or {
+                filter("a", FilterOperator.SL, "[1,2)")
+            }
+        }
+        assertEquals("or=(a.sl.\"[1,2)\")", logical)
+    }
+
+    private fun filterParams(builder: PostgrestFilterBuilder.() -> Unit): Map<String, List<String>> {
+        return PostgrestFilterBuilder(PropertyConversionMethod.NONE).apply(block = builder).params
     }
 
     private fun filterToString(builder: PostgrestFilterBuilder.() -> Unit): String {

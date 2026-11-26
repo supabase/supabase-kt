@@ -15,6 +15,8 @@ import kotlinx.serialization.json.jsonObject
 enum class RpcMethod(val httpMethod: HttpMethod) {
     /**
      * HTTP HEAD method. If used, no body will be returned. Useful when using count. The parameters will be sent as query parameters.
+     *
+     * Query parameters can't express NULL, so top-level null parameters are omitted: the function uses the default value of that argument. If the argument has no default, PostgREST won't find the function (PGRST202). Use [POST] to pass NULL explicitly.
      */
     HEAD(HttpMethod.Head),
     /**
@@ -23,6 +25,8 @@ enum class RpcMethod(val httpMethod: HttpMethod) {
     POST(HttpMethod.Post),
     /**
      * HTTP GET method. If used, the function will be called in read-only mode. The parameters will be sent as query parameters.
+     *
+     * Query parameters can't express NULL, so top-level null parameters are omitted: the function uses the default value of that argument. If the argument has no default, PostgREST won't find the function (PGRST202). Use [POST] to pass NULL explicitly.
      */
     GET(HttpMethod.Get);
 }
