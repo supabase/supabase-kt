@@ -123,13 +123,14 @@ abstract class PostgrestRequestBuilder(
      * Instructs PostgREST to return a single JSON object, returning `null`/blank data when no row matches.
      *
      * Like ``single()``, this sets the `application/vnd.pgrst.object+json` accept header so the
-     * server enforces a single result. Unlike ``single()``, when the query does not match exactly
-     * one row the resulting `PGRST116` error is not thrown — ``PostgrestResponse/value`` is `null`
-     * instead.
+     * server enforces a single result. Unlike ``single()``, when the query matches zero rows the
+     * resulting `PGRST116` error is not thrown — ``PostgrestResponse/value`` is `null` instead.
      *
      * > Note: PostgREST returns `PGRST116` both when zero rows match and when more than one row
-     * > matches. This method returns `null` for either case; use ``single()`` for the strict variant
-     * > that always throws when the query does not match exactly one row.
+     * > matches. Only the zero-row case is turned into `null`; a match of more than one row still
+     * > throws a `PostgrestRestException`, since the query should have been scoped to match at most
+     * > one row. Use ``single()`` for the strict variant that always throws when the query does not
+     * > match exactly one row.
      */
     @JsName("maybeSingleValue")
     fun maybeSingle() {

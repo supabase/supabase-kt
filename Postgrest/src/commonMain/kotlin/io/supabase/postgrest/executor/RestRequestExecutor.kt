@@ -9,6 +9,8 @@ import io.supabase.postgrest.query.PostgrestRequestBuilder
 import io.supabase.postgrest.result.PostgrestResult
 import io.ktor.http.HttpMethod
 import kotlinx.coroutines.delay
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import kotlin.math.pow
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -24,6 +26,9 @@ internal data object RestRequestExecutor : RequestExecutor {
     private const val BASE_DELAY_MS = 1000L
     private const val BACKOFF_MULTIPLIER = 2.0
     private const val RETRY_COUNT_HEADER = "x-retry-count"
+    // PostgREST wording varies by version ("The result contains 0 rows", "Results contain 2 rows, ..."),
+    // but the matched row count always comes right before "row"/"rows".
+    private val ROW_COUNT_REGEX = Regex("""(\d+) rows?\b""")
 
     override suspend fun execute(
         postgrest: Postgrest,
@@ -50,7 +55,7 @@ internal data object RestRequestExecutor : RequestExecutor {
                 lastException = e
                 if (attempt < retryCount && e.statusCode in RETRYABLE_STATUS_CODES) {
                     delay(getRetryDelay(attempt))
-                } else if(e.code == "PGRST116" && request.acceptHeader is AcceptHeader.Single && (request.acceptHeader as AcceptHeader.Single).maybe) {
+                } else if(e.code == "PGRST116" && request.acceptHeader is AcceptHeader.Single && (request.acceptHeader as AcceptHeader.Single).maybe && e.matchedZeroRows()) {
                     return PostgrestResult("", e.response.headers, postgrest)
                 } else {
                     throw e
@@ -65,6 +70,15 @@ internal data object RestRequestExecutor : RequestExecutor {
             }
         }
         throw lastException!!
+    }
+
+    /**
+     * PostgREST uses `PGRST116` both when zero rows and when more than one row match a single-object request.
+     * Only the zero-row case should become `null` for `maybeSingle()`; unknown `details` are treated as not zero.
+     */
+    private fun PostgrestRestException.matchedZeroRows(): Boolean {
+        val text = (details as? JsonPrimitive)?.contentOrNull ?: return false
+        return ROW_COUNT_REGEX.find(text)?.groupValues?.get(1)?.toIntOrNull() == 0
     }
 
     private fun getRetryDelay(attempt: Int): Duration {
