@@ -11,6 +11,7 @@ import io.supabase.storage.Storage
 import io.supabase.storage.UploadStatus
 import io.supabase.storage.resumable.ResumableClient.Companion.TUS_VERSION
 import io.supabase.storage.storage
+import io.supabase.storage.transferTimeouts
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.onUpload
 import io.ktor.client.request.bearerAuth
@@ -163,6 +164,7 @@ internal class ResumableUploadImpl(
             header("Content-Type", "application/offset+octet-stream")
             header("Upload-Offset", offset)
             bearerAuth(accessTokenOrApiKey())
+            transferTimeouts(storageApi.supabaseClient.storage.config)
             setBody(StreamContent(limit) {
                 writeFully(buffer, 0, limit.toInt())
             })
