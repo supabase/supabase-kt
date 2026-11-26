@@ -68,6 +68,7 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.encodeURLParameter
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -92,6 +93,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import kotlin.concurrent.atomics.AtomicReference
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -131,10 +133,10 @@ internal class AuthImpl(
         importSession(it)
     }
     override val oauth: OAuthApi = OAuthApiImpl(userApi)
-    var sessionJob: Job? = null
+    private val sessionJob = AtomicReference<Job?>(null)
     var refreshInformation: SessionRefreshInformation? = null
     override val isAutoRefreshRunning: Boolean
-        get() = sessionJob?.isActive == true
+        get() = sessionJob.load()?.isActive == true
 
     override val serializer = config.serializer ?: supabaseClient.defaultSerializer
 
@@ -598,8 +600,7 @@ internal class AuthImpl(
         delay: Boolean,
         initializing: Boolean
     ) {
-        sessionJob?.cancel()
-        sessionJob = authScope.launch {
+        val job = authScope.launch(start = CoroutineStart.LAZY) {
             if(delay) delayBeforeExpiry(session)
             tryImportingSession(
                 { handleExpiredSession(session, config.alwaysAutoRefresh) },
@@ -607,7 +608,11 @@ internal class AuthImpl(
                 { updateStatusIfExpired(session, it) }
             )
         }
-        if (initializing) sessionJob?.join()
+        // Swap atomically: imports can run at the same time on different threads, and every job
+        // that gets replaced has to be cancelled, or it refreshes later with a spent refresh token.
+        sessionJob.exchange(job)?.cancel()
+        job.start()
+        if (initializing) job.join()
     }
 
     @Suppress("MagicNumber")
@@ -690,8 +695,7 @@ internal class AuthImpl(
 
     override fun stopAutoRefreshForCurrentSession() {
         logger.d { "Stopping auto refresh for current session" }
-        sessionJob?.cancel()
-        sessionJob = null
+        sessionJob.exchange(null)?.cancel()
     }
 
     @SupabaseInternal
