@@ -34,7 +34,7 @@ Supported targets:
 
 **Windows**: mingwX64
 
-**Linux**: linuxX64
+**Linux**: linuxX64, linuxArm64
 
 </details>
 
