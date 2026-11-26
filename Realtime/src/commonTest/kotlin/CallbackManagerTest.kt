@@ -4,6 +4,7 @@ import io.supabase.realtime.HasRecord
 import io.supabase.realtime.PostgresAction
 import io.supabase.realtime.PostgresJoinConfig
 import io.supabase.realtime.Presence
+import io.supabase.realtime.RealtimeChannelError
 import io.supabase.realtime.RealtimeSystemPayload
 import io.supabase.realtime.broadcast.BroadcastPayload
 import io.supabase.realtime.broadcast.RealtimeBroadcast
@@ -58,6 +59,24 @@ class CallbackManagerTest {
         cm.removeCallbackById(id)
         called = false
         cm.triggerSystem(RealtimeSystemPayload("system", "ok", "Message!", "myChannel"))
+        assertFalse { called }
+    }
+
+    @Test
+    fun testErrorCallback() {
+        val cm = CallbackManagerImpl()
+        val error = RealtimeChannelError(RealtimeChannelError.Type.JOIN_REJECTED, "reason", buildJsonObject { })
+
+        var called = false
+        val id = cm.addErrorCallback {
+            assertEquals(error, it)
+            called = true
+        }
+        cm.triggerError(error)
+        assertTrue { called }
+        cm.removeCallbackById(id)
+        called = false
+        cm.triggerError(error)
         assertFalse { called }
     }
 

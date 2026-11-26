@@ -30,6 +30,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlin.test.Test
@@ -39,6 +40,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
 
 val EXAMPLE_JWT = buildString {
     append(JWTUtils.encodeToBase64Url(Json.encodeToString(JwtHeader(JwtHeader.Algorithm.HS256))) + ".")
@@ -454,6 +456,44 @@ class RealtimeChannelTest {
                             channel.subscribe(true)
                         }
                     }.join()
+                }
+            )
+        }
+    }
+
+    @Test
+    fun testPostgresChangesOptionsAreSentWithTheJoin() {
+        runTest {
+            createTestClient(
+                wsHandler = { i, _ ->
+                    val config = i.receive().toMessage().payload["config"]!!.jsonObject
+                    assertEquals(buildJsonObject {
+                        put("wait", true)
+                        put("timeout", 5000)
+                    }, config["postgres_changes_options"])
+                },
+                supabaseHandler = {
+                    it.channel("channelId") {
+                        postgresChangesOptions {
+                            wait = true
+                            timeout = 5.seconds
+                        }
+                    }.subscribe()
+                }
+            )
+        }
+    }
+
+    @Test
+    fun testNoPostgresChangesOptionsByDefault() {
+        runTest {
+            createTestClient(
+                wsHandler = { i, _ ->
+                    val config = i.receive().toMessage().payload["config"]!!.jsonObject
+                    assertFalse(config.containsKey("postgres_changes_options"))
+                },
+                supabaseHandler = {
+                    it.channel("channelId").subscribe()
                 }
             )
         }
