@@ -499,5 +499,4 @@ features:
   storage.analytics.list_tables: implemented
   storage.analytics.load_table: implemented
   storage.analytics.update_table: implemented
-  storage.analytics.rename_table: implemented
   storage.analytics.delete_table: implemented
