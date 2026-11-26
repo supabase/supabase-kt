@@ -2,7 +2,6 @@ package io.supabase.storage
 
 import io.supabase.auth.api.AuthenticatedSupabaseApi
 import io.supabase.buildUrl
-import io.supabase.exceptions.RestException
 import io.supabase.putJsonObject
 import io.supabase.safeBody
 import io.supabase.storage.BucketApi.Companion.UPSERT_HEADER
@@ -284,12 +283,10 @@ internal class BucketApiImpl(
 
     override suspend fun exists(path: String): Boolean {
         try {
-            api.request(storagePath(bucketId, path)) {
-                method = HttpMethod.Head
-            }
+            info(path)
             return true
-        } catch (e: RestException) {
-            if (e.statusCode in listOf(HttpStatusCode.NotFound.value, HttpStatusCode.BadRequest.value)) return false
+        } catch (e: StorageRestException) {
+            if (e.code == "NoSuchKey" || (e.statusCode == HttpStatusCode.NotFound.value && e.code.isEmpty())) return false
             throw e
         }
     }
